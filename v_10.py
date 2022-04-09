@@ -1,4 +1,3 @@
-# Ensemble learning
 # Görselleştirme:
 # -Dünya haritası görselleştirmesi(folium)
 
@@ -19,6 +18,7 @@ from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
+from geopy.geocoders import Nominatim
 
 pd.set_option("display.max_columns",None)
 pd.set_option("display.float_format",lambda x:"%.3f" %x)
@@ -449,6 +449,46 @@ sns.kdeplot(df_new["Wages"],shade=True,ax=ax[0])
 sns.kdeplot(df_new["Sell_Value"],shade=True,ax=ax[1])
 plt.show()
 
+# Dünya haritası ile görselleştirme
+df_geo = df_new[["CNation"]]
+df_geo["Long"] = np.nan
+df_geo["Lat"] = np.nan
+geolocator = Nominatim(user_agent="my_user_agent")
+lst_nation = df_geo["CNation"].value_counts().index.tolist()
+dict_nation={}
+for i in lst_nation:
+    loc = geolocator.geocode(i)
+    dict_nation.update({i:[loc.longitude,loc.latitude]})
+df_geo["Potential"] = df_new["Potential"]
+df_geo["Potential_Mean"] = np.nan
+for i in lst_nation :
+    df_geo.loc[df_geo["CNation"] == i, "Long"] = dict_nation[i][0]
+    df_geo.loc[df_geo["CNation"] == i, "Lat"] = dict_nation[i][1]
+    df_geo.loc[df_geo["CNation"] == i, "Potential_Mean"] = df_geo[df_geo["CNation"]==i]["Potential"].mean()
+
+
+from folium import GeoJson
+geo=r"archive/countries.geojson"
+file = open(geo, encoding="utf8")
+text = file.read()
+import folium
+m = folium.Map(width="%100",weight="%100")
+GeoJson(text).add_to(m)
+m.save('aee.html')
+
+m = folium.Map([42 ,29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
+folium.Choropleth(
+    geo_data=text,
+    data=df_geo,
+    columns=['CNation', 'Potential_Mean'],
+    legend_name='Oynadıkları liglere göre Potansiyel Oyuncu Dağılımı',
+    key_on='feature.properties.ADMIN'
+#‘feature.id’ ya da ‘feature.properties.statename’ de olabilir.
+    ).add_to(m)
+m.save('olmaz.html')
+
+
+
 
 # # Kategorik değişkenler için çıktı (ama az olacak)
 # sns.stripplot(x="Foot",y="Age",data=df_new,hue="Team")
@@ -624,10 +664,6 @@ df_new["Caps_fm21"] = df_new["Caps_fm21"].astype(int)
 df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
 
 
-
-df_new.head()
-df_new
-
 #####################
 #Eksik değer analizi
 ######################
@@ -755,7 +791,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_
 
 
 def models_(X_train, X_test, y_train, y_test,log=False):
-
     models = []
     models.append(('RF', RandomForestRegressor()))
     models.append(('GBM', GradientBoostingRegressor()))
@@ -785,16 +820,16 @@ def models_(X_train, X_test, y_train, y_test,log=False):
         tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
         print(tr_split,"\n")
         print(" Mean: ",y.mean(),"\n","Median: ",y.median(),"\n","Std: ",y.std())
-    return "LightGBM"
+        sorted_models = []
+        for name in tr_split["Name"]:
+            for i, col in enumerate(models):
+                if col[0] == name:
+                    sorted_models.append(col)
+
+    return "LightGBM",sorted_models
 
 def best_model(X_train, X_test, y_train, y_test,plot=False):
-    models = []
-    models.append(('RF', RandomForestRegressor()))
-    models.append(('GBM', GradientBoostingRegressor()))
-    models.append(("XGBoost", XGBRegressor(objective='reg:squarederror')))
-    models.append(("LightGBM", LGBMRegressor()))
-    models.append(("CatBoost", CatBoostRegressor(verbose=False)))
-    model_name = models_(X_train, X_test, y_train, y_test)
+    model_name,models = models_(X_train, X_test, y_train, y_test)
     for name, model in models:
         if name == model_name:
             modelfit = model.fit(X_train, y_train)
@@ -816,9 +851,16 @@ def best_model(X_train, X_test, y_train, y_test,plot=False):
             print("CV MAE    : ",-(cv_results['test_neg_mean_absolute_error'].mean()))
             print("CV R-KARE :",(cv_results['test_r2'].mean()))
             df_feature = plot_importance(model, X_train, save=True)
-            return df_feature,modelfit
+            return df_feature,modelfit,models
 
-df_feature_model,model = best_model(X_train, X_test, y_train, y_test,plot=True)
+df_feature_model,modelfit,models = best_model(X_train, X_test, y_train, y_test,plot=True)
+
+# CV RMSE   :  3729.0600339496295
+# CV MAE    :  2183.8718166773024
+# CV R-KARE : 0.815188708820536
+
+
+
 # Wages(Base Model)
 # Wages
 #1)
@@ -853,13 +895,13 @@ best_model(X_train, X_test, y_train, y_test,plot=True)
 
 
 # Hiperparametre Optimizasyonu
-model.get_params()
+modelfit.get_params()
 model_params = {'max_depth': range(-1, 11),
                    "min_child_samples": range(10, 30, 5),
                    'n_estimators': range(100,1000,100),
                    'learning_rate': [0.1,0.2,0.3,0.4,0.5],
                    "colsample_bytree": [0.9, 0.8, 1]}
-model_best_grid = GridSearchCV(model, model_params,
+model_best_grid = GridSearchCV(modelfit, model_params,
                               cv=5,
                               n_jobs=-1,
                               verbose=True).fit(X_train, y_train)
@@ -872,7 +914,7 @@ best_params = {'max_depth': 3,
 model_best_grid.best_params_
 model_best_grid.best_score_
 
-model_final = model.set_params(**model_best_grid.best_params_, random_state=17).fit(X_train, y_train)
+model_final = modelfit.set_params(**model_best_grid.best_params_, random_state=17).fit(X_train, y_train)
 y_pred = model_final.predict(X_test)
 print("Test RMSE: ", np.sqrt(mean_squared_error(y_test, y_pred)))
 cv_results = cross_validate(model_final, X_train, y_train, cv=20, scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
@@ -880,6 +922,25 @@ cv_results['test_neg_root_mean_squared_error'].mean()
 cv_results['test_neg_mean_absolute_error'].mean()
 cv_results['test_r2'].mean()
 
+from sklearn.ensemble import VotingRegressor
+
+def voting_regression(models, X_train, y_train):
+    print("Voting Regression...")
+    voting_clf = VotingRegressor(estimators=[(models[0][0], models[0][1]), (models[1][0], models[1][1]),
+                                              (models[2][0], models[2][1])]).fit(X_train, y_train)
+
+    cv_results = cross_validate(voting_clf, X_train, y_train, cv=5,
+                                scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
+    print("VR RMSE   : ", -(cv_results['test_neg_root_mean_squared_error'].mean()))
+    print("VR MAE    : ", -(cv_results['test_neg_mean_absolute_error'].mean()))
+    print("VR R-KARE :", (cv_results['test_r2'].mean()))
+    return voting_clf
+
+voting_regression(models,X_train,y_train)
+
+# VR RMSE   :  3714.203160096844
+# VR MAE    :  2154.799428883318
+# VR R-KARE : 0.8168473801393296
 
 ###############################################
 # Catboost ile overfitting önleme
