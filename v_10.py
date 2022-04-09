@@ -1,16 +1,6 @@
-# Yeni değişken (22-21 farklarından)
-
-# Boş değer değer doldurma
-
-# Görselleştirme
 # Ensemble learning
-
-# Dağılım
-# PCA
-
-# Dünya haritası görselleştirmesi
-
-# Fifa yaşı ile ile 5 karakter
+# Görselleştirme:
+# -Dünya haritası görselleştirmesi(folium)
 
 import pandas as pd
 import numpy as np
@@ -28,6 +18,7 @@ from xgboost import XGBRegressor
 from lightgbm import LGBMRegressor
 from catboost import CatBoostRegressor
 from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
 
 pd.set_option("display.max_columns",None)
 pd.set_option("display.float_format",lambda x:"%.3f" %x)
@@ -171,16 +162,27 @@ def outlier_replace(dataframe, numeric_cols, replace=False, lb_down=1.5, ub_up=1
             dataframe.loc[(dataframe.loc[:, col] < lower_bound), col] = lower_bound * lb_down
             dataframe.loc[(dataframe.loc[:, col] > upper_bound), col] = upper_bound * ub_up
     print(lower_and_upper)
-
+def plot_importance(model, features,save=False):
+    feature_imp = pd.DataFrame({'Value': model.feature_importances_, 'Feature': features.columns})
+    plt.figure(figsize=(25,25 ))
+    sns.set(font_scale=1)
+    sns.barplot(x="Value", y="Feature", data=feature_imp.sort_values(by="Value",
+                                                                     ascending=False))
+    plt.title('Features')
+    plt.tight_layout()
+    plt.show()
+    if save:
+        plt.savefig('Best_Model_Feature_Importance.png')
+    return feature_imp.sort_values("Value",ascending=False)
 
 ###################################
 # Loading Datas
 ###################################
 
-df_clubs = pd.read_csv("club_dataset/fm22_clubs_3000.csv")
-df_new = pd.read_csv("data_FM_22/Veri_14845.csv")
-df_fm21 = pd.read_csv("FM21_son_dataset.csv")
-df_clubs_fm21 = pd.read_csv("club_dataset/FM21_Clubs_3000.csv")
+df_clubs = pd.read_csv("data/fm22_clubs_3k.csv")
+df_new = pd.read_csv("data/fm22_players_15k.csv")
+df_fm21 = pd.read_csv("data/fm21_players_15k.csv")
+df_clubs_fm21 = pd.read_csv("data/fm21_clubs_3k.csv")
 
 
 ##################################
@@ -195,8 +197,6 @@ cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 # Outlier Görselleştirme
 outlier_plot(df_new,num_cols)
 
-
-df_new[df_new["Age"]<18]
 
 # Baskılama işlemi yapmadık sadece wage değişeknindeki outlier datayı sildik
 
@@ -625,9 +625,6 @@ df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
 
 
 
-
-
-
 df_new.head()
 df_new
 
@@ -695,8 +692,6 @@ df_new.info(verbose=True)
 
 
 
-
-
 ############
 # Scaling
 #############
@@ -709,134 +704,162 @@ df_new[num_cols] = rs.inverse_transform(df_new[num_cols])
 df_new.head()
 
 
+
 #log1p ---> Sale_Price
 
 df_new['Wages'] = np.log1p(df_new["Wages"].values)
 
 
+################################
+# Principal Component Analysis
+################################
+
+pca_col = [i for i in df_new.columns if i not in "Wages"]
+pca = PCA()
+pca_fit = pca.fit_transform(df_new[pca_col])
+pca.explained_variance_ratio_
+np.cumsum(pca.explained_variance_ratio_)
+
+
+# Optimum Bileşen Sayısı
+
+pca = PCA().fit(df_new[pca_col])
+plt.plot(np.cumsum(pca.explained_variance_ratio_))
+plt.xlabel("Bileşen Sayısını")
+plt.ylabel("Kümülatif Varyans Oranı")
+plt.show()
+
+
+################################
+# Final PCA'in Oluşturulması
+################################
+
+pca = PCA(n_components=11)
+pca_fit = pca.fit_transform(df_new[pca_col])
+# tek başlarına ne kadar bilgi açıkladığı
+pca.explained_variance_ratio_
+# Kümülatif toplam ilk ikisi ne kadar bilgi açıkladığı gibi
+np.cumsum(pca.explained_variance_ratio_)
+
+
+final_df = pd.DataFrame(pca_fit, columns=["PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8","PC9","PC10","PC11"])
+final_df["Wages"] = df_new["Wages"].reset_index(drop=True)
+
+final_df =df_new
 #########################################
 # Model Kurma
 #########################################
-y = df_new["Wages"]
-X = df_new.drop(["Wages"], axis=1)
-X.info()
+y = final_df["Wages"]
+X = final_df.drop("Wages",axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
 
 
-models = []
-models.append(('RF', RandomForestRegressor()))
-models.append(('GBM', GradientBoostingRegressor()))
-models.append(("XGBoost", XGBRegressor(objective='reg:squarederror')))
-models.append(("LightGBM", LGBMRegressor()))
-models.append(("CatBoost", CatBoostRegressor(verbose=False)))
+def models_(X_train, X_test, y_train, y_test,log=False):
 
-names = []
-rmse = []
-#log
-for name, model in models:
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    rmse.append(np.sqrt(mean_squared_error(np.expm1(y_test), np.expm1(y_pred))))
-    names.append(name)
-tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse})
-tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
-tr_split
+    models = []
+    models.append(('RF', RandomForestRegressor()))
+    models.append(('GBM', GradientBoostingRegressor()))
+    models.append(("XGBoost", XGBRegressor(objective='reg:squarederror')))
+    models.append(("LightGBM", LGBMRegressor()))
+    models.append(("CatBoost", CatBoostRegressor(verbose=False)))
+    names = []
+    rmse = []
+    if log:
+        #log
+        for name, model in models:
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            rmse.append(np.sqrt(mean_squared_error(np.expm1(y_test), np.expm1(y_pred))))
+            names.append(name)
+        tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse})
+        tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
+        print(tr_split,"\n")
+        print(" Mean: ",np.expm1(y).mean(),"\n","Median: ",np.expm1(y).median(),"\n","Std: ",np.expm1(y).std())
+    else:
+        for name, model in models:
+            model.fit(X_train, y_train)
+            y_pred = model.predict(X_test)
+            rmse.append(np.sqrt(mean_squared_error(y_test, y_pred)))
+            names.append(name)
+        tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse})
+        tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
+        print(tr_split,"\n")
+        print(" Mean: ",y.mean(),"\n","Median: ",y.median(),"\n","Std: ",y.std())
+    return "LightGBM"
 
-print(" Mean: ",np.expm1(y).mean(),"\n","Median: ",np.expm1(y).median(),"\n","Std: ",np.expm1(y).std())
+def best_model(X_train, X_test, y_train, y_test,plot=False):
+    models = []
+    models.append(('RF', RandomForestRegressor()))
+    models.append(('GBM', GradientBoostingRegressor()))
+    models.append(("XGBoost", XGBRegressor(objective='reg:squarederror')))
+    models.append(("LightGBM", LGBMRegressor()))
+    models.append(("CatBoost", CatBoostRegressor(verbose=False)))
+    model_name = models_(X_train, X_test, y_train, y_test)
+    for name, model in models:
+        if name == model_name:
+            modelfit = model.fit(X_train, y_train)
+            y_pred = modelfit.predict(X_test)
+            print("\nTest RMSE: ", np.sqrt(mean_squared_error(y_test, y_pred)))
+            # Train Rmse
+            y_pred_tr = modelfit.predict(X_train)
+            print("Train RMSE: ", np.sqrt(mean_squared_error(y_train, y_pred_tr)))
+            # Ekstra
+            print("\nTest Score: ",modelfit.score(X_test, y_test),"\nTrain Score:",modelfit.score(X_train, y_train))
+            # yüzdesel rmse
+            rmspe = np.sqrt(np.mean(np.square(((y_test - y_pred) / y_test)), axis=0))
+            print("\nrmspe: ",rmspe )
 
-for name, model in models:
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-    rmse.append(np.sqrt(mean_squared_error(y_test, y_pred)))
-    names.append(name)
-tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse})
-tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
-tr_split
+            # Cross Validation
+            cv_results = cross_validate(modelfit, X_train, y_train, cv=10,
+                                        scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
+            print("CV RMSE   : ",-(cv_results['test_neg_root_mean_squared_error'].mean()))
+            print("CV MAE    : ",-(cv_results['test_neg_mean_absolute_error'].mean()))
+            print("CV R-KARE :",(cv_results['test_r2'].mean()))
+            df_feature = plot_importance(model, X_train, save=True)
+            return df_feature,modelfit
 
-print(" Mean: ",y.mean(),"\n","Median: ",y.median(),"\n","Std: ",y.std())
-
-
+df_feature_model,model = best_model(X_train, X_test, y_train, y_test,plot=True)
 # Wages(Base Model)
 # Wages
 #1)
 # Mean:  5590.081766917293
 # Median:  3740.0
 # Std:  5235.466436711407
-
 #2)
 # Mean:  8078.075976457999
 # Median:  4820.0
 # Std:  8623.365117077497
+# 3) --> PCA 11 column
 
-#        Name     RMSE|        Name     RMSE
-# 0  CatBoost 3447.107| 0  LightGBM 3606.873
-# 1  LightGBM 3546.376| 1  CatBoost 3629.678
-# 2       GBM 3588.416| 2   XGBoost 3785.523
-# 3        RF 3630.061| 3       GBM 3852.540
-# 4   XGBoost 3657.617| 4        RF 3857.140
+#        Name     RMSE|        Name     RMSE|       Name     RMSE|
+# 0  CatBoost 3447.107| 0  LightGBM 3606.873|0  CatBoost 5122.401|
+# 1  LightGBM 3546.376| 1  CatBoost 3629.678|1  LightGBM 5232.242|
+# 2       GBM 3588.416| 2   XGBoost 3785.523|2        RF 5240.202|
+# 3        RF 3630.061| 3       GBM 3852.540|3   XGBoost 5378.897|
+# 4   XGBoost 3657.617| 4        RF 3857.140|4       GBM 5416.904|
 
 
-# LGBM Model
-lgbm_model = LGBMRegressor()
-lgbm_modelfit = lgbm_model.fit(X_train, y_train)
-y_pred = lgbm_modelfit.predict(X_test)
-print("Test RMSE: ", np.sqrt(mean_squared_error(y_test, y_pred)))
 
-# Train Rmse
-y_pred_tr = lgbm_modelfit.predict(X_train)
-print("Train RMSE: ", np.sqrt(mean_squared_error(y_train, y_pred_tr)))
-
-# Ekstra
-lgbm_model.score(X_test, y_test)
-lgbm_model.score(X_train, y_train)
-
-# yüzdesel rmse
-rmspe = np.sqrt(np.mean(np.square(((y_test - y_pred) / y_test)), axis=0))
-
-# Cross Validation
-cv_results = cross_validate(lgbm_model, X_train, y_train, cv=10, scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
-
-cv_results['test_neg_root_mean_squared_error'].mean()
-cv_results['test_neg_mean_absolute_error'].mean()
-cv_results['test_r2'].mean()
-
-np.mean(np.sqrt(-cross_val_score(lgbm_model,
-                                 X,
-                                 y,
-                                 cv=10,
-                                 scoring="neg_mean_squared_error")))
-
-cv_results = cross_validate(lgbm_model,
-                            X, y,
-                            cv=5,
-                            scoring=["roc_auc"])
-
-# Plot İmportance
-def plot_importance(model, features, num=len(X)):
-    feature_imp = pd.DataFrame({'Value': model.feature_importances_, 'Feature': features.columns})
-    plt.figure(figsize=(25,25 ))
-    sns.set(font_scale=1)
-    sns.barplot(x="Value", y="Feature", data=feature_imp.sort_values(by="Value",
-                                                                     ascending=False)[0:num])
-    plt.title('Features')
-    plt.tight_layout()
-    plt.show()
-    return feature_imp.sort_values("Value",ascending=False)
-
-df_feature = plot_importance(lgbm_model, X_train)
-df_feature.head(20)
-df_new.corr()["Wages"].sort_values(ascending=False).head(20)
+#####################################
+# Feature Importance New Model
+####################################
+importance_col = df_feature_model[df_feature_model["Value"]!=0]["Feature"].tolist()
+y = final_df["Wages"]
+X = final_df[importance_col]
+X.info()
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
+best_model(X_train, X_test, y_train, y_test,plot=True)
 
 
 
 # Hiperparametre Optimizasyonu
-lgbm_model.get_params()
-lgbm_params = {'max_depth': range(-1, 11),
-               "min_child_samples": range(10, 30, 5),
-               'n_estimators': range(100,1000,100),
-               'learning_rate': [0.1,0.2,0.3,0.4,0.5],
-               "colsample_bytree": [0.9, 0.8, 1]}
-lgbm_best_grid = GridSearchCV(lgbm_model, lgbm_params,
+model.get_params()
+model_params = {'max_depth': range(-1, 11),
+                   "min_child_samples": range(10, 30, 5),
+                   'n_estimators': range(100,1000,100),
+                   'learning_rate': [0.1,0.2,0.3,0.4,0.5],
+                   "colsample_bytree": [0.9, 0.8, 1]}
+model_best_grid = GridSearchCV(model, model_params,
                               cv=5,
                               n_jobs=-1,
                               verbose=True).fit(X_train, y_train)
@@ -845,28 +868,17 @@ best_params = {'max_depth': 3,
                'n_estimators': 100,
                'learning_rate': 0.1,
                "colsample_bytree": 0.8}
-lgbm_best_grid.best_params_
-lgbm_best_grid.best_score_
-lgbm_final = lgbm_model.set_params(**best_params, random_state=17).fit(X_train, y_train)
-y_pred = lgbm_final.predict(X_test)
+
+model_best_grid.best_params_
+model_best_grid.best_score_
+
+model_final = model.set_params(**model_best_grid.best_params_, random_state=17).fit(X_train, y_train)
+y_pred = model_final.predict(X_test)
 print("Test RMSE: ", np.sqrt(mean_squared_error(y_test, y_pred)))
-
-
-cv_results = cross_validate(lgbm_final, X_train, y_train, cv=20, scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
-
+cv_results = cross_validate(model_final, X_train, y_train, cv=20, scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
 cv_results['test_neg_root_mean_squared_error'].mean()
 cv_results['test_neg_mean_absolute_error'].mean()
 cv_results['test_r2'].mean()
-
-# {'colsample_bytree': 0.8,
-#  'learning_rate': 0.1,
-#  'max_depth': 3,
-#  'min_child_samples': 15,
-#  'n_estimators': 700}
-
-# test_neg_root_mean_squared_error = -2848118.533286165
-# test_neg_mean_absolute_error = -1816799.081814294
-# test_r2 = 0.7268803728652827
 
 
 ###############################################
