@@ -19,6 +19,10 @@ from catboost import CatBoostRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from geopy.geocoders import Nominatim
+from wordcloud import WordCloud
+from folium import GeoJson
+import folium
+from folium.plugins import heat_map,marker_cluster
 
 pd.set_option("display.max_columns",None)
 pd.set_option("display.float_format",lambda x:"%.3f" %x)
@@ -250,6 +254,7 @@ df_new = df_new.replace(to_replace="None", value=np.nan)
 
 # Release_Clause ---> Çok fazla boş değer bulunduğundan ötürü veri setinden çıkarttık.
 # Diğer kolonlar model açısından bilgi içermiyeceğinden ötürü çıkarttık
+df_name_Cname = df_new[["Name","CName"]]
 df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Name","Release_Clause_fm21"], axis=1,inplace=True)
 
 
@@ -322,7 +327,7 @@ df_new['Contract_End_Year_fm21'] = df_new["Contract_End_fm21"].dt.year
 
 
 # Sell_Value_fm21
-df_new = df_new.loc[df_new["Sell_Value_fm21"] != "Not for sale"].reset_index(drop=True)
+df_new = df_new.loc[df_new["Sell_Value_fm21"] != "Not for sale"]
 df_new["Sell_Value_fm21"] = df_new["Sell_Value_fm21"].str[2:].str.replace(",", "").astype(float)
 
 
@@ -398,10 +403,14 @@ df_new.loc[((df_new['Position'].str.contains("ST")) | (df_new['Position'].str.co
 df_new.loc[((df_new['Position'].str.contains("DM")) | (df_new['Position'].str.contains("ML")) | (df_new['Position'].str.contains("MC")) | (df_new['Position'].str.contains("MR")) | (df_new['Position'].str.contains("AMC"))), "Position"] = "Midfield"
 df_new.loc[((df_new['Position'].str.contains("DL")) | (df_new['Position'].str.contains("DR")) | (df_new['Position'].str.contains("DC")) | (df_new['Position'].str.contains("WBL")) | (df_new['Position'].str.contains("WBR"))), "Position"] = "Defenders"
 
-
 ###################################
 # Veri Görselleştirme
 ###########################
+
+# Görselleştirme için name ve Cname'i başka bir veri setinden tutma
+df_name_Cname=df_name_Cname.loc[df_new.index]
+df_new.reset_index(drop=True,inplace=True)
+df_name_Cname.reset_index(drop=True,inplace=True)
 
 # Potential & Wage
 plt.figure(figsize=(7, 5))
@@ -409,6 +418,7 @@ ax = sns.scatterplot(x =df_new['Potential'], y = df_new['Wages'])
 plt.xlabel("Potential")
 plt.ylabel("Wage")
 plt.title("Potential & Wage", fontsize = 18)
+plt.savefig("visualization/Potential&Wage_Dağılımı.png")
 plt.show()
 
 # Potential & Sell_Value
@@ -417,65 +427,72 @@ ax = sns.scatterplot(x =df_new['Potential'], y = df_new['Sell_Value'])
 plt.xlabel("Potential")
 plt.ylabel("Sell_Value")
 plt.title("Potential & Sell_Value", fontsize = 18)
+plt.savefig("visualization/Potential&Sell_Value_Dağılımı.png")
 plt.show()
+
 
 # Ayak kırılımında potential&Wage dağılımı
 plt.figure(figsize=(7, 5))
 ax = sns.scatterplot(x =df_new['Potential'], y = df_new['Wages'], hue = df_new['Foot'])
 plt.xlabel("Potential")
 plt.ylabel("Wage")
-plt.title("Potential & Wage", fontsize = 18)
+plt.title("Foot & Potential & Wage", fontsize = 18)
+plt.savefig("visualization/Ayak_Potential&Wage_dağılımı.png")
 plt.show()
 
 # Wordcloud
-from wordcloud import WordCloud
 text = " ".join(i for i in df_new.Nation)
-# Kelime bulutu oluşturma
 wordcloud = WordCloud(collocations=False).generate(text)
-# Görselleştirme
 plt.imshow(wordcloud, interpolation="bilinear")
 plt.axis("off")
+plt.savefig("visualization/Nation_WordCloud.png")
 plt.show()
 
 
-# Data Dağılım (['Length', 'Weight', 'Caps_Goals', 'Sell_Value', 'Wages'])
-sns.pairplot(df_new[df_new.columns.tolist()[7:12]])
-sns.set(style="ticks", color_codes=True)
-plt.show()
+# # Data Dağılım (['Length', 'Weight', 'Caps_Goals', 'Sell_Value', 'Wages'])
+# sns.pairplot(df_new[df_new.columns.tolist()[7:12]])
+# sns.set(style="ticks", color_codes=True)
+# plt.show()
 
 #Wage Sell_Value Dağılımları
 fig,ax=plt.subplots(nrows=1,ncols=2,figsize=(15,7))
 sns.kdeplot(df_new["Wages"],shade=True,ax=ax[0])
 sns.kdeplot(df_new["Sell_Value"],shade=True,ax=ax[1])
+plt.savefig("visualization/Wage_and_Sell_Value_Dağılımları.png")
 plt.show()
 
 # Dünya haritası ile görselleştirme
-df_geo = df_new[["CNation"]]
+df_geo = df_new[["CNation","CCity"]]
 df_geo["Long"] = np.nan
 df_geo["Lat"] = np.nan
 geolocator = Nominatim(user_agent="my_user_agent")
 lst_nation = df_geo["CNation"].value_counts().index.tolist()
+lst_city = df_geo["CCity"].value_counts().index.tolist()
 dict_nation={}
-for i in lst_nation:
+for i in lst_city:
     loc = geolocator.geocode(i)
-    dict_nation.update({i:[loc.longitude,loc.latitude]})
+    if loc:
+        dict_nation.update({i:[loc.longitude,loc.latitude]})
+    else:
+        print(i)
+        dict_nation.update({i:[37.1833,67.3667]})
 df_geo["Potential"] = df_new["Potential"]
 df_geo["Potential_Mean"] = np.nan
-for i in lst_nation :
-    df_geo.loc[df_geo["CNation"] == i, "Long"] = dict_nation[i][0]
-    df_geo.loc[df_geo["CNation"] == i, "Lat"] = dict_nation[i][1]
-    df_geo.loc[df_geo["CNation"] == i, "Potential_Mean"] = df_geo[df_geo["CNation"]==i]["Potential"].mean()
+for i in lst_city :
+    df_geo.loc[df_geo["CCity"] == i, "Long"] = dict_nation[i][0]
+    df_geo.loc[df_geo["CCity"] == i, "Lat"] = dict_nation[i][1]
 
+for j in lst_nation:
+    df_geo.loc[df_geo["CNation"] == j, "Potential_Mean"] = df_geo[df_geo["CNation"] == j]["Potential"].mean()
 
-from folium import GeoJson
+df_geo[["Name","CName"]]= df_name_Cname
+df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]  =df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]
+
 geo=r"archive/countries.geojson"
 file = open(geo, encoding="utf8")
 text = file.read()
-import folium
-m = folium.Map(width="%100",weight="%100")
-GeoJson(text).add_to(m)
-m.save('aee.html')
 
+# Futbolcu potansiyellerine göre dağılmını map üzerinde gösterilmesi
 m = folium.Map([42 ,29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
 folium.Choropleth(
     geo_data=text,
@@ -483,27 +500,59 @@ folium.Choropleth(
     columns=['CNation', 'Potential_Mean'],
     legend_name='Oynadıkları liglere göre Potansiyel Oyuncu Dağılımı',
     key_on='feature.properties.ADMIN'
-#‘feature.id’ ya da ‘feature.properties.statename’ de olabilir.
     ).add_to(m)
-m.save('olmaz.html')
+m.save('visualization/Potensiyel_ortalamasına_göre_ülke_dağılımı.html')
 
 
+# Futbolcuların ülkelere göre dağılımını HeatMap olarak  gösterilmesi
+m=folium.Map(location=[40,32],tiles="OpenStreetMap",zoom_start=7)
+folium.plugins.HeatMap(zip(df_geo["Lat"],df_geo["Long"])).add_to(m)
+m.save('visualization/Nation_Heatmap.html')
+
+# Futbolcuların şehirlere göre göre dağılımını MarkerCluster gösterilmesi
+m=folium.Map(location=[40,32],tiles="OpenStreetMap",zoom_start=7)
+folium.plugins.MarkerCluster(zip(df_geo["Lat"],df_geo["Long"])).add_to(m)
+m.save('visualization/Nation_MarkerCluster.html')
+
+# Oyuncuların oyanığı takımlara göre dağılımı ve bilgilerinin gösterilmesi
+m3=folium.Map(location=[40,32],tiles="OpenStreetMap",zoom_start=7)
+for i in df_geo.index:
+    iframe = folium.IFrame("<font face='Comic Sans MS'  color='#143F6B'>" +
+                            '<h3><b> Name: </b></font>' + str(df_geo.loc[i,'Name']) + '</h3><br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Nation: </b></font>' + str(df_geo.loc[i, 'Nation']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Ability: </b></font>' + str(df_geo.loc[i, 'Ability']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Potential: </b></font>' + str(df_geo.loc[i, 'Potential']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Age: </b></font>' + str(df_geo.loc[i,'Age']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Position: </b></font>' + str(df_geo.loc[i, 'Position']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Foot: </b></font>' + str(df_geo.loc[i, 'Foot']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Length: </b></font>' + str(df_geo.loc[i, 'Length']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Weight: </b></font>' + str(df_geo.loc[i, 'Weight']) + '<br>' +
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Caps_Goals: </b></font>' + str(df_geo.loc[i, 'Caps_Goals'])+ '<br>'+
+                           "<font face='Comic Sans MS'  color='#143F6B'>" +
+                           '<b>Wages: </b></font>' + str(df_geo.loc[i, 'Wages']))
+    popup = folium.Popup(iframe, min_width=300, max_width=300)
+    lat=df_geo.loc[i,"Lat"]+np.random.uniform(0.1, 10**(-20))-0.00005
+    long=df_geo.loc[i,"Long"]+np.random.uniform(0.1, 10**(-20))-0.00005
+    folium.Marker(location=[lat, long],popup=popup).add_to(m3)
+m3.save('visualization/m3.html')
 
 
-# # Kategorik değişkenler için çıktı (ama az olacak)
-# sns.stripplot(x="Foot",y="Age",data=df_new,hue="Team")
-# plt.show()
+for (index, row) in df.iterrows():
+    if row.loc['BRANCH'] == 1:
+        iframe = folium.IFrame('Account#:' + str(row.loc['ACCT']) + '<br>' + 'Name: ' + row.loc['NAME'] + '<br>' + 'Terr#: ' + str(row.loc['TERR']))
+        popup = folium.Popup(iframe, min_width=300, max_width=300)
+        folium.Marker(location=[row.loc['LAT'], row.loc['LON']], icon=folium.Icon(color=row.loc['COLOR'], icon='map-marker', prefix='fa'), popup=popup).add_to(map1)
 
 
-# sns.set(font_scale=1,style="whitegrid")
-# # fig,ax=plt.subplots(ncols=2,nrows=3,figsize=(16,12))
-# # cat_list=["Wages"]
-# # count=0
-# # for i in range(1):
-# #     sns.distplot(df_new[cat_list[count]],ax=ax[i][0],kde=False,color="#F43EEC")
-# #     sns.kdeplot(df_new[cat_list[count]],ax=ax[i][1],shade=True,color="#359F4B")
-# #     count+=1
-# # plt.show()
 
 
 ############################
