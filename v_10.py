@@ -19,7 +19,7 @@ from sklearn.decomposition import PCA
 from geopy.geocoders import Nominatim
 from wordcloud import WordCloud
 from folium import GeoJson
-from folium.plugins import heat_map,marker_cluster
+from folium.plugins import heat_map,marker_cluster,MarkerCluster
 from sklearn.cluster import KMeans
 from catboost import CatBoostRegressor, Pool
 from scipy.stats import pearsonr, stats,shapiro
@@ -183,7 +183,7 @@ def load_data():
     df_new = pd.read_csv("data/fm22_players_15k.csv")
     df_fm21 = pd.read_csv("data/fm21_players_15k.csv")
     df_clubs_fm21 = pd.read_csv("data/fm21_clubs_3k.csv")
-    return df_clubs,df_new,df_fm21,df_clubs_fm21
+    return df_new,df_clubs,df_fm21,df_clubs_fm21
 
 
 ##################################
@@ -198,6 +198,7 @@ cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 outlier_plot(df_new,num_cols)
 
 def data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21):
+    print("Data Preparation ...")
     ########################################
     # Veri Ön İşleme
     ########################################
@@ -392,11 +393,12 @@ def data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21):
     df_new = df_new.loc[df_new["Wages"] < 45270.0]
     return df_new,df_name_Cname
 def visualization(df_new,df_name_Cname):
+    print("Visualization ...")
     ###################################
     # Veri Görselleştirme
     ###########################
     # Görselleştirme için name ve Cname'i başka bir veri setinden tutma
-    df_new,df_name_Cname = data_prep(df_new)
+    df_new,df_name_Cname = data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21)
     df_name_Cname=df_name_Cname.loc[df_new.index]
     df_new.reset_index(drop=True,inplace=True)
     df_name_Cname.reset_index(drop=True,inplace=True)
@@ -451,45 +453,55 @@ def visualization(df_new,df_name_Cname):
     plt.show()
 
     # Dünya haritası ile görselleştirme
-    df_geo = df_new[["CNation","CCity"]]
-    df_geo["Long"] = np.nan
-    df_geo["Lat"] = np.nan
-    geolocator = Nominatim(user_agent="my_user_agent")
-    lst_nation = df_geo["CNation"].value_counts().index.tolist()
-    lst_city = df_geo["CCity"].value_counts().index.tolist()
-    dict_nation={}
-    for i in lst_city:
-        loc = geolocator.geocode(i)
-        if loc:
-            dict_nation.update({i:[loc.longitude,loc.latitude]})
-        else:
-            print(i)
-            dict_nation.update({i:[37.1833,67.3667]})
-    df_geo["Potential"] = df_new["Potential"]
-    df_geo["Potential_Mean"] = np.nan
-    for i in lst_city :
-        df_geo.loc[df_geo["CCity"] == i, "Long"] = dict_nation[i][0]
-        df_geo.loc[df_geo["CCity"] == i, "Lat"] = dict_nation[i][1]
+    # df_geo = df_new[["CNation","CCity"]]
+    # df_geo["Long"] = np.nan
+    # df_geo["Lat"] = np.nan
+    # geolocator = Nominatim(user_agent="my_user_agent")
+    # lst_nation = df_geo["CNation"].value_counts().index.tolist()
+    # lst_city = df_geo["CCity"].value_counts().index.tolist()
+    # dict_nation={}
+    # for i in lst_city:
+    #     loc = geolocator.geocode(i)
+    #     if loc:
+    #         dict_nation.update({i:[loc.longitude,loc.latitude]})
+    #     else:
+    #         print(i)
+    #         dict_nation.update({i:[37.1833,67.3667]})
+    # df_geo["Potential"] = df_new["Potential"]
+    # df_geo["Potential_Mean"] = np.nan
+    # for i in lst_city :
+    #     df_geo.loc[df_geo["CCity"] == i, "Long"] = dict_nation[i][0]
+    #     df_geo.loc[df_geo["CCity"] == i, "Lat"] = dict_nation[i][1]
+    #
+    # for j in lst_nation:
+    #     df_geo.loc[df_geo["CNation"] == j, "Potential_Mean"] = df_geo[df_geo["CNation"] == j]["Potential"].mean()
+    #
+    # df_geo[["Name","CName"]]= df_name_Cname
+    # df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]  =df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]
 
-    for j in lst_nation:
-        df_geo.loc[df_geo["CNation"] == j, "Potential_Mean"] = df_geo[df_geo["CNation"] == j]["Potential"].mean()
-
-    df_geo[["Name","CName"]]= df_name_Cname
-    df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]  =df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]
-
+    df_geo = pd.read_csv("data/df_geo.csv")
     geo=r"archive/countries.geojson"
     file = open(geo, encoding="utf8")
     text = file.read()
-
     # Futbolcu potansiyellerine göre dağılmını map üzerinde gösterilmesi
-    m = folium.Map([42 ,29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
+    m = folium.Map([42, 29], tiles="Cartodb Positron", zoom_start=5, width="%100", height="%100")
     folium.Choropleth(
         geo_data=text,
         data=df_geo,
         columns=['CNation', 'Potential_Mean'],
         legend_name='Oynadıkları liglere göre Potansiyel Oyuncu Dağılımı',
         key_on='feature.properties.ADMIN'
-        ).add_to(m)
+    ).add_to(m)
+    m.save('visualization/Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html')
+
+    m = folium.Map([42, 29], tiles="Cartodb Positron", zoom_start=5, width="%100", height="%100")
+    folium.Choropleth(
+        geo_data=text,
+        data=df_geo,
+        columns=['Nation', 'Potential_Mean'],
+        legend_name='Oynadıkları liglere göre Potansiyel Oyuncu Dağılımı',
+        key_on='feature.properties.ADMIN'
+    ).add_to(m)
     m.save('visualization/Potensiyel_ortalamasına_göre_ülke_dağılımı.html')
 
 
@@ -504,10 +516,11 @@ def visualization(df_new,df_name_Cname):
     m.save('visualization/Nation_MarkerCluster.html')
 
     # Oyuncuların oyanığı takımlara göre dağılımı ve bilgilerinin gösterilmesi
-    m3=folium.Map(location=[40,32],tiles="OpenStreetMap",zoom_start=7)
+    m3 = folium.Map(location=[40, 32], tiles="OpenStreetMap", zoom_start=7)
+    marker = MarkerCluster().add_to(m3)
     for i in df_geo.index:
         iframe = folium.IFrame("<font face='Comic Sans MS'  color='#143F6B'>" +
-                                '<h3><b> Name: </b></font>' + str(df_geo.loc[i,'Name']) + '</h3><br>' +
+                               '<h3><b> Name: </b></font>' + str(df_geo.loc[i, 'Name']) + '</h3><br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
                                '<b>Nation: </b></font>' + str(df_geo.loc[i, 'Nation']) + '<br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
@@ -515,7 +528,7 @@ def visualization(df_new,df_name_Cname):
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
                                '<b>Potential: </b></font>' + str(df_geo.loc[i, 'Potential']) + '<br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
-                               '<b>Age: </b></font>' + str(df_geo.loc[i,'Age']) + '<br>' +
+                               '<b>Age: </b></font>' + str(df_geo.loc[i, 'Age']) + '<br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
                                '<b>Position: </b></font>' + str(df_geo.loc[i, 'Position']) + '<br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
@@ -525,14 +538,20 @@ def visualization(df_new,df_name_Cname):
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
                                '<b>Weight: </b></font>' + str(df_geo.loc[i, 'Weight']) + '<br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
-                               '<b>Caps_Goals: </b></font>' + str(df_geo.loc[i, 'Caps_Goals'])+ '<br>'+
+                               '<b>Caps_Goals: </b></font>' + str(df_geo.loc[i, 'Caps_Goals']) + '<br>' +
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
                                '<b>Wages: </b></font>' + str(df_geo.loc[i, 'Wages']))
         popup = folium.Popup(iframe, min_width=300, max_width=300)
-        lat=df_geo.loc[i,"Lat"]+np.random.uniform(0.1, 10**(-20))-0.00005
-        long=df_geo.loc[i,"Long"]+np.random.uniform(0.1, 10**(-20))-0.00005
-        folium.Marker(location=[lat, long],popup=popup).add_to(m3)
-    m3.save('visualization/m3.html')
+        folium.Marker(location=[df_geo.loc[i, "Lat"], df_geo.loc[i, "Long"]], popup=popup, marker_cluster=True).add_to(
+            marker)
+    marker.save('visualization/m3.html')
+
+
+
+
+
+
+
     ######################
     # Korelasyon
     ###################
@@ -567,7 +586,7 @@ def corr_anlys(df_new):
     corr, p = stats.spearmanr(df_new["Wages"], df_new["Long_Throws"])
     print('Spearman correlation: %.3f, P-value score: %.3f' % (corr,p))
 def feature_eng(df_new):
-
+    print("Feature Engineering ...")
     #########################################
     # Feature Engineering
     ########################################
@@ -738,7 +757,9 @@ def principal_comp_anlys(df_new, pca_plot=False):
 #########################################
 # Model Kurma
 #########################################
+
 def models_(X_train, X_test, y_train, y_test,y,log=False):
+    print("Models Running ...")
     models = []
     models.append(('RF', RandomForestRegressor()))
     models.append(('GBM', GradientBoostingRegressor()))
@@ -773,7 +794,6 @@ def models_(X_train, X_test, y_train, y_test,y,log=False):
             for i, col in enumerate(models):
                 if col[0] == name:
                     sorted_models.append(col)
-
     return "LightGBM",sorted_models
 def best_model(X_train, X_test, y_train, y_test,y,plot=False):
     model_name,models = models_(X_train, X_test, y_train, y_test,y)
@@ -798,6 +818,12 @@ def best_model(X_train, X_test, y_train, y_test,y,plot=False):
             print("CV MAE    : ",-(cv_results['test_neg_mean_absolute_error'].mean()))
             print("CV R-KARE :",(cv_results['test_r2'].mean()))
             df_feature = plot_importance(model, X_train, save=True)
+            if plot:
+                identity_line = np.linspace(max(min(y_pred), min(y_test)),
+                                            min(max(y_pred), max(y_test)))
+                plt.figure(figsize=(10, 10))
+                plt.scatter(x=y_pred, y=y_test, alpha=0.2)
+                plt.plot(identity_line, identity_line, color="red", linestyle="dashed", linewidth=3.0)
             return df_feature,modelfit,models
 def feature_model(final_df,df_feature_model):
     #####################################
@@ -882,7 +908,7 @@ def main():
                     'n_estimators': range(100, 1000, 100),
                     'learning_rate': [0.1, 0.2, 0.3, 0.4, 0.5],
                     "colsample_bytree": [0.9, 0.8, 1]}
-    model_final = hyperparameter_optimization(modelfit, model_params, X_train, y_train, X_test, y_test, cv=3)
+    #model_final = hyperparameter_optimization(modelfit, model_params, X_train, y_train, X_test, y_test, cv=3)
     voting_clf = voting_regression(models,X_train,y_train)
     joblib.dump(voting_clf, "voting_clf.pkl")
     return voting_clf
