@@ -478,25 +478,30 @@ plt.show()
 #         dict_nation.update({i:[37.1833,67.3667]})
 #
 # df_geo["Potential"] = df_new["Potential"]
+# df_geo["Wages"] = df_new["Wages"]
 # df_geo["Potential_Mean"] = np.nan
+# df_geo["Wages_Mean"] = np.nan
 # for i in lst_city :
 #     df_geo.loc[df_geo["CCity"] == i, "Long"] = dict_nation[i][0]
 #     df_geo.loc[df_geo["CCity"] == i, "Lat"] = dict_nation[i][1]
 #
 # for j in lst_nation:
 #     df_geo.loc[df_geo["CNation"] == j, "Potential_Mean"] = df_geo[df_geo["CNation"] == j]["Potential"].mean()
+# for j in lst_nation:
+#     df_geo.loc[df_geo["CNation"] == j, "Wages_Mean"] = df_geo[df_geo["CNation"] == j]["Wages"].mean()
 #
 # df_geo[["Name","CName"]]= df_name_Cname
-# df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]  =df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]
+# df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]] = df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]]
 #
-# df_geo.to_csv("df_geo.csv")
+# df_geo.to_csv("data/df_geo.csv")
+
 df_geo = pd.read_csv("data/df_geo.csv")
 geo=r"archive/countries.geojson"
 file = open(geo, encoding="utf8")
 text = file.read()
 
 # Futbolcu potansiyellerine göre dağılmını map üzerinde gösterilmesi
-m = folium.Map([42 ,29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
+m = folium.Map([42, 29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
 folium.Choropleth(
     geo_data=text,
     data=df_geo,
@@ -505,6 +510,18 @@ folium.Choropleth(
     key_on='feature.properties.ADMIN'
     ).add_to(m)
 m.save('visualization/Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html')
+
+
+m = folium.Map([42, 29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
+folium.Choropleth(
+    geo_data=text,
+    data=df_geo,
+    columns=['CNation', 'Wages_Mean'],
+    legend_name='Oynadıkları Liglere Göre Oyuncuların Ortalama Maaş Dağılımı',
+    key_on='feature.properties.ADMIN'
+    ).add_to(m)
+m.save('visualization/Maaş_ortalamasına_göre_club_ülke_dağılımı.html')
+
 
 m = folium.Map([42 ,29],tiles="Cartodb Positron", zoom_start=5,width="%100",height="%100")
 folium.Choropleth(
@@ -559,7 +576,9 @@ for i in df_geo.index:
     popup = folium.Popup(iframe, min_width=300, max_width=300)
     # lat=df_geo.loc[i,"Lat"]+np.random.uniform(0.1, 10**(-20))-0.00005
     # long=df_geo.loc[i,"Long"]+np.random.uniform(0.1, 10**(-20))-0.00005
-    folium.Marker(location=[df_geo.loc[i,"Lat"], df_geo.loc[i,"Long"]],popup=popup,marker_cluster=True).add_to(marker)
+    folium.Marker(location=[df_geo.loc[i,"Lat"], df_geo.loc[i,"Long"]],popup=popup,marker_cluster=True,icon=folium.DivIcon(html=f"""
+      <div><img src="https://img.fminside.net/facesfm22/7458500.png" width="300%" height="300%"></div>
+    """)).add_to(marker)
 marker.save('visualization/m3.html')
 
 
