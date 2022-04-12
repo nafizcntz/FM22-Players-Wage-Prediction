@@ -9,7 +9,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 import datetime as dt
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, VotingRegressor
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error
 from sklearn.model_selection import GridSearchCV, cross_validate, RandomizedSearchCV, validation_curve, \
     train_test_split, cross_val_score
 from sklearn.preprocessing import LabelEncoder,StandardScaler,MinMaxScaler,RobustScaler
@@ -210,7 +210,7 @@ def data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21):
     for i,col in enumerate(df_new["Team"]):
         for j,col_club in enumerate(df_clubs["CName"]):
             if col == col_club:
-                df_new.iloc[i,54:] = df_clubs.loc[j]
+                df_new.iloc[i,55:] = df_clubs.loc[j]
                 break
 
     # Fm21'e club datasını ekleme
@@ -240,9 +240,8 @@ def data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21):
 
     # Release_Clause ---> Çok fazla boş değer bulunduğundan ötürü veri setinden çıkarttık.
     # Diğer kolonlar model açısından bilgi içermiyeceğinden ötürü çıkarttık
-    df_name_Cname = df_new[["Name","CName"]]
-    df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Name","Release_Clause_fm21"], axis=1,inplace=True)
-
+    df_name_Cname = df_new[["Name","CName","Img_Link"]]
+    df_new.drop(["Unnamed: 0",'Link',"Img_Link","Release_Clause","CStatus_fm21","CName","CLink","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Name","Release_Clause_fm21"], axis=1,inplace=True)
 
     #############################
     # Boş değer doldurma
@@ -398,7 +397,6 @@ def visualization(df_new,df_name_Cname):
     # Veri Görselleştirme
     ###########################
     # Görselleştirme için name ve Cname'i başka bir veri setinden tutma
-    df_new,df_name_Cname = data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21)
     df_name_Cname=df_name_Cname.loc[df_new.index]
     df_new.reset_index(drop=True,inplace=True)
     df_name_Cname.reset_index(drop=True,inplace=True)
@@ -452,7 +450,7 @@ def visualization(df_new,df_name_Cname):
     plt.savefig("visualization/Wage_and_Sell_Value_Dağılımları.png")
     plt.show()
 
-    # Dünya haritası ile görselleştirme
+    # # Dünya haritası ile görselleştirme
     # df_geo = df_new[["CNation","CCity"]]
     # df_geo["Long"] = np.nan
     # df_geo["Lat"] = np.nan
@@ -467,17 +465,22 @@ def visualization(df_new,df_name_Cname):
     #     else:
     #         print(i)
     #         dict_nation.update({i:[37.1833,67.3667]})
+    #
     # df_geo["Potential"] = df_new["Potential"]
+    # df_geo["Wages"] = df_new["Wages"]
     # df_geo["Potential_Mean"] = np.nan
+    # df_geo["Wages_Mean"] = np.nan
     # for i in lst_city :
     #     df_geo.loc[df_geo["CCity"] == i, "Long"] = dict_nation[i][0]
     #     df_geo.loc[df_geo["CCity"] == i, "Lat"] = dict_nation[i][1]
     #
     # for j in lst_nation:
     #     df_geo.loc[df_geo["CNation"] == j, "Potential_Mean"] = df_geo[df_geo["CNation"] == j]["Potential"].mean()
+    # for j in lst_nation:
+    #     df_geo.loc[df_geo["CNation"] == j, "Wages_Mean"] = df_geo[df_geo["CNation"] == j]["Wages"].mean()
     #
-    # df_geo[["Name","CName"]]= df_name_Cname
-    # df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]  =df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation","Wages"]]
+    # df_geo[["Name","CName","Img_Link"]]= df_name_Cname
+    # df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]] = df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]]
 
     df_geo = pd.read_csv("data/df_geo.csv")
     geo=r"archive/countries.geojson"
@@ -542,15 +545,12 @@ def visualization(df_new,df_name_Cname):
                                "<font face='Comic Sans MS'  color='#143F6B'>" +
                                '<b>Wages: </b></font>' + str(df_geo.loc[i, 'Wages']))
         popup = folium.Popup(iframe, min_width=300, max_width=300)
-        folium.Marker(location=[df_geo.loc[i, "Lat"], df_geo.loc[i, "Long"]], popup=popup, marker_cluster=True).add_to(
-            marker)
-    marker.save('visualization/m3.html')
-
-
-
-
-
-
+        # lat=df_geo.loc[i,"Lat"]+np.random.uniform(0.1, 10**(-20))-0.00005
+        # long=df_geo.loc[i,"Long"]+np.random.uniform(0.1, 10**(-20))-0.00005
+        folium.Marker(location=[df_geo.loc[i, "Lat"], df_geo.loc[i, "Long"]], popup=popup, marker_cluster=True,
+                      icon=folium.DivIcon(html=f"""<div><img src='""" + df_geo.loc[
+                          i, "Img_Link"] + """' width="300%" height="300%"></div>""")).add_to(marker)
+    marker.save('visualization/Image_Map.html')
 
     ######################
     # Korelasyon
@@ -759,7 +759,6 @@ def principal_comp_anlys(df_new, pca_plot=False):
 #########################################
 
 def models_(X_train, X_test, y_train, y_test,y,log=False):
-    print("Models Running ...")
     models = []
     models.append(('RF', RandomForestRegressor()))
     models.append(('GBM', GradientBoostingRegressor()))
@@ -768,6 +767,7 @@ def models_(X_train, X_test, y_train, y_test,y,log=False):
     models.append(("CatBoost", CatBoostRegressor(verbose=False)))
     names = []
     rmse = []
+    mae=[]
     if log:
         #log
         for name, model in models:
@@ -775,7 +775,8 @@ def models_(X_train, X_test, y_train, y_test,y,log=False):
             y_pred = model.predict(X_test)
             rmse.append(np.sqrt(mean_squared_error(np.expm1(y_test), np.expm1(y_pred))))
             names.append(name)
-        tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse})
+            mae.append(mean_absolute_error(np.expm1(y_test), np.expm1(y_pred)))
+        tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse,"MAE":mae})
         tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
         print(tr_split,"\n")
         print(" Mean: ",np.expm1(y).mean(),"\n","Median: ",np.expm1(y).median(),"\n","Std: ",np.expm1(y).std())
@@ -785,7 +786,8 @@ def models_(X_train, X_test, y_train, y_test,y,log=False):
             y_pred = model.predict(X_test)
             rmse.append(np.sqrt(mean_squared_error(y_test, y_pred)))
             names.append(name)
-        tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse})
+            mae.append(mean_absolute_error(y_test, y_pred))
+        tr_split = pd.DataFrame({'Name': names, 'RMSE': rmse,"MAE":mae})
         tr_split = tr_split.sort_values(by="RMSE", ascending=True).reset_index(drop=True)
         print(tr_split,"\n")
         print(" Mean: ",y.mean(),"\n","Median: ",y.median(),"\n","Std: ",y.std())
@@ -794,9 +796,10 @@ def models_(X_train, X_test, y_train, y_test,y,log=False):
             for i, col in enumerate(models):
                 if col[0] == name:
                     sorted_models.append(col)
-    return "LightGBM",sorted_models
-def best_model(X_train, X_test, y_train, y_test,y,plot=False):
-    model_name,models = models_(X_train, X_test, y_train, y_test,y)
+
+    return "LightGBM",sorted_models,tr_split
+def best_model(X_train, X_test, y_train, y_test,y,plot_1=False,plot_2=False):
+    model_name,models,tr_split = models_(X_train, X_test, y_train, y_test,y)
     for name, model in models:
         if name == model_name:
             modelfit = model.fit(X_train, y_train)
@@ -818,12 +821,24 @@ def best_model(X_train, X_test, y_train, y_test,y,plot=False):
             print("CV MAE    : ",-(cv_results['test_neg_mean_absolute_error'].mean()))
             print("CV R-KARE :",(cv_results['test_r2'].mean()))
             df_feature = plot_importance(model, X_train, save=True)
-            if plot:
+            if plot_1:
+                fig, ax = plt.subplots(figsize=(15, 10))
+                plt.suptitle('MODELLERİN KARŞILAŞTIRILMASI', fontsize=20)
+                plt.yticks(fontsize=13)
+                plt.xticks(fontsize=13)
+                plt.plot(tr_split['Name'], tr_split['RMSE'], label="RMSE")
+                plt.plot(tr_split['Name'], tr_split['MAE'], label="MAE")
+                plt.legend()
+                plt.show()
+                plt.savefig("visualization/Model_RMSE_MAE.png")
+            if plot_2:
                 identity_line = np.linspace(max(min(y_pred), min(y_test)),
                                             min(max(y_pred), max(y_test)))
                 plt.figure(figsize=(10, 10))
                 plt.scatter(x=y_pred, y=y_test, alpha=0.2)
                 plt.plot(identity_line, identity_line, color="red", linestyle="dashed", linewidth=3.0)
+                plt.show()
+                plt.savefig("visualization/Gerçek_tahmin_Dağılımı.png")
             return df_feature,modelfit,models
 def feature_model(final_df,df_feature_model):
     #####################################
@@ -896,11 +911,12 @@ def catb_overfit(df_new):
 def main():
     df_new,df_clubs,df_fm21,df_clubs_fm21 = load_data()
     df_new,df_name_Cname = data_prep(df_new,df_clubs,df_fm21,df_clubs_fm21)
+    # visualization(df_new,df_name_Cname)
     final_df = feature_eng(df_new)
     y = final_df["Wages"]
     X = final_df.drop("Wages", axis=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=17)
-    df_feature_model, modelfit, models = best_model(X_train, X_test, y_train, y_test, y, plot=True)
+    df_feature_model, modelfit, models = best_model(X_train, X_test, y_train, y_test, y,plot_1=True,plot_2=True)
     # feature_model(final_df, df_feature_model)
 
     model_params = {'max_depth': range(-1, 11),
