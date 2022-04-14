@@ -28,7 +28,7 @@ with row3_1:
     st.markdown("You can find the source code in the [BuLiAn GitHub Repository](https://github.com/tdenzl/BuLiAn)")
 
 
-df = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model Deployment\Model_Deployment.csv")
+df = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Model Deployment\Model_Deployment.csv")
 ### SEE DATA ###
 row6_spacer1, row6_1, row6_spacer2 = st.columns((.2, 7.1, .2))
 with row6_1:
@@ -139,12 +139,13 @@ with row13_3:
 
 with row13_4:
     show_me_player = st.selectbox("Choose the player's Name",
-                                [""]+df[df.Team == show_me_team]["Name"].value_counts().index.tolist(),
-                                format_func=lambda x: "" if x == "" else x,
+                                  [""]+df[df.Team == show_me_team]["Name"].value_counts().index.tolist(),
+                                  format_func=lambda x: "" if x == "" else x,
                                   key="playername")
 
 
-row15_spacer1, row15_1, row15_2, row15_3, row15_4, row15_spacer2  = st.columns((0.5, 1.5, 1.5, 1, 2, 0.5))
+#row15_spacer1, row15_1, row15_2, row15_3, row15_4, row15_spacer2  = st.columns((0.5, 1.5, 1.5, 1, 2, 0.5))
+row15_spacer1, row15_1, row15_spacer2, row15_2, row15_spacer3, row15_3, row15_spacer4, row15_4, row15_spacer4 = st.columns((.2, 2.3, .2, 2.3, .2, 2.3, .2, 2.3, .2))
 with row15_1:
     st.subheader("Player")
 with row15_2:
@@ -153,34 +154,29 @@ with row15_3:
     st.subheader("Mental")
 with row15_4:
     st.subheader("Physical")
-"""
-row17_spacer1, row17_1, row17_spacer2 = st.columns((.2, 7.1, .2))
-with row17_1:
-       st.warning('Unfortunately this analysis is only available if all teams are included')
-"""
 
-row16_spacer1, row16_1, row16_2, row16_3, row16_4, row16_spacer2  = st.columns((0.5, 1.5, 1.5, 1, 2, 0.5))
-with row16_1:
-    col_player_info = df.columns[:10]
-    for i in df[]:
-        st.markdown("'"+df[i] +"'")
+row16_spacer1, row16_1, row16_spacer2, row16_2, row16_spacer3, row16_3, row16_spacer4, row16_4, row16_spacer4 = st.columns((.2, 2.3, .2, 2.3, .2, 2.3, .2, 2.3, .2))
+#row16_spacer1, row16_1, row16_2, row16_3, row16_4, row16_spacer2= st.columns((0.5, 1.5, 1.5, 1, 2, 0.5))
+try:
+    with row16_1:
+        col_player_info = df.columns[:10]
+        for i in df[col_player_info]:
+            st.markdown('' + i + ':          ' + '' + str(df[col_player_info][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
 
-with row16_2:
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[0]['shots_on_goal']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[0]['distance']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎‎"+str(df_match_result.iloc[0]['total_passes']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎‎ ‎‎"+str(df_match_result.iloc[0]['possession']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[0]['fouls']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[0]['offside']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[0]['corners']))
-with row16_4:
-    st.markdown(" "+str(df_match_result.iloc[1]['shots_on_goal']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[1]['distance']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎‎"+str(df_match_result.iloc[1]['total_passes']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎‎"+str(df_match_result.iloc[1]['possession']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[1]['fouls']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[1]['offside']))
-    st.markdown(" ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎ ‎"+str(df_match_result.iloc[1]['corners']))
-    
+    with row16_2:
+        col_player_tech = df.columns[10:24]
+        for i in df[col_player_tech]:
+            st.markdown('' + i + ':          ' + '' + str(df[col_player_tech][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
 
+    with row16_3:
+        col_player_mental = df.columns[24:38]
+        for i in df[col_player_mental]:
+            st.markdown('' + i + ':          ' + '' + str(df[col_player_mental][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+
+    with row16_4:
+        col_player_physical = df.columns[38:46]
+        for i in df[col_player_physical]:
+            st.markdown('' + i + ': ' + '' + str(df[col_player_physical][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+except:
+    st.write("Please Select a Player for Informations..")
 
