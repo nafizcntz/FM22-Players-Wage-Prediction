@@ -19,18 +19,17 @@ from folium.plugins import heat_map,marker_cluster,MarkerCluster
 from sklearn.cluster import KMeans
 from catboost import CatBoostRegressor, Pool
 from scipy.stats import pearsonr, stats,shapiro
-final_df = pd.read_csv("Final Projesi/Turkcell GY DS Bootcamp Projesi/Model Deployment/Model_Deployment.csv")
-
-
-def fm22_prediction(index):
-    final_df = pd.read_csv("Final Projesi/Turkcell GY DS Bootcamp Projesi/Model Deployment/Model_Deployment.csv")
-    model = joblib.load('Final Projesi/Turkcell GY DS Bootcamp Projesi/Model Deployment/voting_clf_2.pkl')
+def fm22_prediction(name):
+    X_test_ = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model Deployment\Model_X_test.csv")
+    index = X_test_[X_test_["Name"] == str(name)].index.tolist()[0]
+    final_df = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model Deployment\Model_Deployment.csv")
+    model = joblib.load(r'C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model Deployment\voting_clf_2.pkl')
     y = final_df["Wages"]
-    X = final_df.drop(["Wages", "Name"], axis=1)
+    X = final_df.drop(["Wages","Name"], axis=1)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
-    return model.predict(X_test.iloc[1].values.reshape(1, -1))
-print("nafiz")
-#fm22_prediction()
+    return model.predict(X_test.iloc[index].values.reshape(1, -1))
+#X_test_[X_test_["Name"] == "Mert Çetin"].index.tolist()[0]
+
 
 
 

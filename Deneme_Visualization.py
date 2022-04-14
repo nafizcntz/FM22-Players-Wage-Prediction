@@ -216,6 +216,7 @@ outlier_plot(df_new,num_cols)
 #  Oyuncuların kuluplerine bakarak club datasetindeki bilgileri oyuncu özelinde
 # atama işlemi yaptık
 df_new.iloc[1,55:]
+
 df_new[df_clubs.columns] = np.nan
 for i,col in enumerate(df_new["Team"]):
     for j,col_club in enumerate(df_clubs["CName"]):
@@ -255,7 +256,7 @@ df_new = df_new.replace(to_replace="None", value=np.nan)
 # Release_Clause ---> Çok fazla boş değer bulunduğundan ötürü veri setinden çıkarttık.
 # Diğer kolonlar model açısından bilgi içermiyeceğinden ötürü çıkarttık
 df_name_Cname = df_new[["Name","CName","Img_Link"]]
-df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","Img_Link","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Name","Release_Clause_fm21"], axis=1,inplace=True)
+df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","Img_Link","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Release_Clause_fm21"], axis=1,inplace=True)
 
 
 #############################
@@ -287,8 +288,10 @@ df_new.loc[(df_new["Potential_fm21"].isnull()) & (df_new["Ability_fm21"] < 70), 
 df_new = df_new[~df_new["Ability_fm21"].isnull()]
 
 #Geri Kalanları sildik
-df_new.dropna(inplace=True)
+df_new[[i for i in df_new.columns if "Name" not in i]].dropna()
 
+
+df_new.dropna(inplace=True)
 
 #########################
 # Veri düzeltme

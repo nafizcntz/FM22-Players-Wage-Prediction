@@ -8,11 +8,13 @@
 </head>
 <body>
     <h1>Model Deployment</h1>
-    <P>Enter İnformation</P>
-    <form action="/sub" method="POST">
-        <input type="text" name="username" placeholder="User Name">
+    <P>Enter Player Name</P>
+    <form method="POST" action="/">
+        <input type="text" name="playername" placeholder="Player Name">
         <input type="submit">
     </form>
-    
+    {% if wage_s %}
+        {{ wage_s }}
+    {% endif %}
 </body>
 </html>
