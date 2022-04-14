@@ -8,9 +8,15 @@ from matplotlib.ticker import FuncFormatter
 import seaborn as sns
 from sklearn.model_selection import train_test_split
 import joblib
-
+from folium.plugins import MarkerCluster
+import folium
+import streamlit.components.v1 as components
+from streamlit_folium import folium_static
 st.set_page_config(layout="wide")
 
+
+df = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_deployment.csv")
+df_2 = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_deployment_2.csv")
 ####################
 ### INTRODUCTION ###
 ####################
@@ -28,7 +34,7 @@ with row3_1:
     st.markdown("You can find the source code in the [BuLiAn GitHub Repository](https://github.com/tdenzl/BuLiAn)")
 
 
-df = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Model Deployment\Model_Deployment.csv")
+
 ### SEE DATA ###
 row6_spacer1, row6_1, row6_spacer2 = st.columns((.2, 7.1, .2))
 with row6_1:
@@ -71,19 +77,19 @@ st.text('')
 #unique_teams = get_unique_teams(df_data_filtered_matchday)
 st.sidebar.header("Player Wage Model Prediction")
 all_nation_selected = st.sidebar.selectbox("Choose the Player's Nation of League ",
-                                           [""]+df.CNation.value_counts().index.tolist(),
+                                           [""]+df_2.CNation.value_counts().index.tolist(),
                                            format_func=lambda x: "" if x == "" else x)
 
 all_league_selected = st.sidebar.selectbox("Choose the player's League",
-                                           [""]+df[df.CNation == all_nation_selected]["CLeague"].value_counts().index.tolist(),
+                                           [""]+df_2[df_2.CNation == all_nation_selected]["CLeague"].value_counts().index.tolist(),
                                            format_func=lambda x: "" if x == "" else x)
 
 all_teams_selected = st.sidebar.selectbox("Choose the player's Team",
-                                          [""]+df[df.CLeague == all_league_selected]["Team"].value_counts().index.tolist(),
+                                          [""]+df_2[df_2.CLeague == all_league_selected]["Team"].value_counts().index.tolist(),
                                           format_func=lambda x: "" if x == "" else x)
 
 all_player_selected = st.sidebar.selectbox("Choose the player's Name",
-                                           [""]+df[df.Team == all_teams_selected]["Name"].value_counts().index.tolist(),
+                                           [""]+df_2[df_2.Team == all_teams_selected]["Name"].value_counts().index.tolist(),
                                            format_func=lambda x: "" if x == "" else x)
 
 def fm22_prediction(df,name):
@@ -100,6 +106,7 @@ def fm22_prediction(df,name):
 
 
 wage = fm22_prediction(df,all_player_selected)
+
 try:
     st.sidebar.write("Prediction Wage €", wage[0], "pw")
     st.sidebar.write("Real Wage €", df[df["Name"]==all_player_selected]["Wages"].tolist()[0], "pw")
@@ -121,26 +128,22 @@ with row12_1:
 row13_spacer1, row13_1, row13_spacer2, row13_2, row13_spacer3, row13_3, row13_spacer4, row13_4, row13_spacer4 = st.columns((.2, 2.3, .2, 2.3, .2, 2.3, .2, 2.3, .2))
 with row13_1:
     show_me_Nation = st.selectbox("Choose the Player's Nation of League ",
-                                 [""]+df.CNation.value_counts().index.tolist(),
-                                 format_func=lambda x: "" if x == "" else x,
+                                df_2.CNation.value_counts().index.tolist(),
                                 key="playernation")
 
 with row13_2:
     show_me_league = st.selectbox("Choose the player's League",
-                                 [""]+df[df.CNation == show_me_Nation]["CLeague"].value_counts().index.tolist(),
-                                 format_func=lambda x: "" if x == "" else x,
-                                key="playerleague")
+                                 df_2[df_2.CNation == show_me_Nation]["CLeague"].value_counts().index.tolist(),
+                                 key="playerleague")
 
 with row13_3:
     show_me_team = st.selectbox("Choose the player's Team",
-                                [""]+df[df.CLeague == show_me_league]["Team"].value_counts().index.tolist(),
-                                format_func=lambda x: "" if x == "" else x,
+                                df_2[df_2.CLeague == show_me_league]["Team"].value_counts().index.tolist(),
                                 key="playerteam")
 
 with row13_4:
     show_me_player = st.selectbox("Choose the player's Name",
-                                  [""]+df[df.Team == show_me_team]["Name"].value_counts().index.tolist(),
-                                  format_func=lambda x: "" if x == "" else x,
+                                  df_2[df_2.Team == show_me_team]["Name"].value_counts().index.tolist(),
                                   key="playername")
 
 
@@ -157,26 +160,138 @@ with row15_4:
 
 row16_spacer1, row16_1, row16_spacer2, row16_2, row16_spacer3, row16_3, row16_spacer4, row16_4, row16_spacer4 = st.columns((.2, 2.3, .2, 2.3, .2, 2.3, .2, 2.3, .2))
 #row16_spacer1, row16_1, row16_2, row16_3, row16_4, row16_spacer2= st.columns((0.5, 1.5, 1.5, 1, 2, 0.5))
-try:
-    with row16_1:
-        col_player_info = df.columns[:10]
-        for i in df[col_player_info]:
-            st.markdown('' + i + ':          ' + '' + str(df[col_player_info][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+with row16_1:
+    col_player_info = df_2.columns[:10]
+    k=0
+    for i in df_2[col_player_info]:
+        if k==0:
+            st.image(df_2[df_2["Name"] == str(show_me_player)].loc[:,"Img_Link"].tolist()[0],width=125)
 
-    with row16_2:
-        col_player_tech = df.columns[10:24]
-        for i in df[col_player_tech]:
-            st.markdown('' + i + ':          ' + '' + str(df[col_player_tech][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+        st.markdown('' + i + ': ' + '' + str(df_2[col_player_info][df_2["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+        k=k+1
+with row16_2:
+    col_player_tech = df_2.columns[10:24]
+    for i in df_2[col_player_tech]:
+        st.markdown('' + i + ': ' + '' + str(df_2[col_player_tech][df_2["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
 
-    with row16_3:
-        col_player_mental = df.columns[24:38]
-        for i in df[col_player_mental]:
-            st.markdown('' + i + ':          ' + '' + str(df[col_player_mental][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+with row16_3:
+    col_player_mental = df_2.columns[24:38]
+    for i in df_2[col_player_mental]:
+        st.markdown('' + i + ': ' + '' + str(df_2[col_player_mental][df_2["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
 
-    with row16_4:
-        col_player_physical = df.columns[38:46]
-        for i in df[col_player_physical]:
-            st.markdown('' + i + ': ' + '' + str(df[col_player_physical][df["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
-except:
-    st.write("Please Select a Player for Informations..")
+with row16_4:
+    col_player_physical = df_2.columns[38:46]
+    for i in df_2[col_player_physical]:
+        st.markdown('' + i + ': ' + '' + str(df_2[col_player_physical][df_2["Name"] == str(show_me_player)].loc[:, i].tolist()[0]) + '')
+
+st.text("")
+st.subheader("Players Mapping")
+html = open(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Image_Map.html",'r',encoding='utf-8')
+source = html.read()
+components.html(source,width=850,height=500)
+
+st.text("")
+st.subheader("Visualizations")
+st.write("Futbolcuların ülkelerine, takımlarına ve potensiyellerine görselleştirmeler ...")
+row17_1, row17_2, row17_3, row17_4 = st.columns(4)
+a = True
+with row17_1:
+    button_1 = st.button("Futbolcuların ülkelere göre dağılımı")
+with row17_2:
+    button_2 = st.button("Ülkelere göre futbolcu maaş ortalaması dağılımı")
+    if button_2:
+        a = False
+with row17_3:
+    button_3 = st.button("Futbolcuların milliyetlerine göre potensiyel ortalaması dağılımı")
+    if button_3:
+        a=False
+with row17_4:
+    button_4 = st.button("Futbolcuların kulüplerinin bulunduğu ülkeye göre potensiyel ortalaması dağılımı")
+    if button_4:
+        a = False
+if a:
+    html = open(
+        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Nation_Heatmap.html", 'r',
+        encoding='utf-8')
+    source = html.read()
+    components.html(source, width=850, height=500)
+
+if button_2:
+    html = open(
+        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Maaş_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
+        encoding='utf-8')
+    source = html.read()
+    components.html(source, width=850, height=500)
+    a= False
+if button_3:
+    html = open(
+        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
+        encoding='utf-8')
+    source = html.read()
+    components.html(source, width=850, height=500)
+    a = False
+if button_4:
+    html = open(
+        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Potensiyel_ortalamasına_göre_ülke_dağılımı.html", 'r',
+        encoding='utf-8')
+    source = html.read()
+    components.html(source, width=850, height=500)
+    a = False
+
+#####
+
+
+### TEAM ###
+row4_spacer1, row4_1, row4_spacer2 = st.columns((.2, 7.1, .2))
+with row4_1:
+    st.subheader('Analysis per Team')
+row5_spacer1, row5_1, row5_spacer2, row5_2, row5_spacer3  = st.columns((.2, 2.3, .4, 4.4, .2))
+with row5_1:
+
+    st.markdown('Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
+    plot_x_per_team_selected = st.selectbox("Which attribute do you want to analyze?",["a","b","c"], key = 'attribute_team')
+    plot_x_per_team_type = st.selectbox("Which measure do you want to analyze?",["a","b","c"], key= 'measure_team')
+with row5_2:
+    df_team_ctotalwages = df_2[~df_2["Team"].duplicated()][["Team", "CTotal_Wages"]].sort_values(by="CTotal_Wages", ascending=False).reset_index(drop=True)
+    df_team_ctotalwages["CTotal_Wages_PTeam"] = np.nan
+    dict_ = df_2["Team"].value_counts().to_dict()
+    df_2.groupby("Team").agg({"CTotal_Wages":"sum"}).sort_values(by="CTotal_Wages",ascending=False)
+    for i,col in enumerate(df_team_ctotalwages["Team"]):
+        df_team_ctotalwages.loc[i,"CTotal_Wages_PTeam"] = df_team_ctotalwages.loc[i,"CTotal_Wages"] / dict_[col]
+    df_team_ctotalwages = df_team_ctotalwages.sort_values(by="CTotal_Wages_PTeam", ascending=False)
+    if plot_x_per_team_selected == "b":
+        sns.barplot(x="Team", y="CTotal_Wages_PTeam", data=df_team_ctotalwages[:10])
+        plt.ticklabel_format(style="plain", axis="y")
+        plt.xticks(rotation=45)
+        st.pyplot()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

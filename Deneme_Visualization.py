@@ -215,7 +215,7 @@ outlier_plot(df_new,num_cols)
 
 #  Oyuncuların kuluplerine bakarak club datasetindeki bilgileri oyuncu özelinde
 # atama işlemi yaptık
-df_new.iloc[1,55:]
+
 
 df_new[df_clubs.columns] = np.nan
 for i,col in enumerate(df_new["Team"]):
@@ -256,7 +256,7 @@ df_new = df_new.replace(to_replace="None", value=np.nan)
 # Release_Clause ---> Çok fazla boş değer bulunduğundan ötürü veri setinden çıkarttık.
 # Diğer kolonlar model açısından bilgi içermiyeceğinden ötürü çıkarttık
 df_name_Cname = df_new[["Name","CName","Img_Link"]]
-df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","Img_Link","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Release_Clause_fm21"], axis=1,inplace=True)
+df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Release_Clause_fm21"], axis=1,inplace=True)
 
 
 #############################
@@ -749,7 +749,6 @@ df_new[['Caps_fm21', 'Goals_fm21']] = df_new['Caps_Goals_fm21'].str.split('/', e
 df_new.drop("Caps_Goals_fm21", axis=1, inplace=True)
 df_new["Caps_fm21"] = df_new["Caps_fm21"].astype(int)
 df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
-
 
 #####################
 #Eksik değer analizi
