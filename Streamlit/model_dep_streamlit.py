@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 from matplotlib.ticker import FuncFormatter
 import seaborn as sns
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error,mean_absolute_error
 import joblib
 from folium.plugins import MarkerCluster
 import folium
@@ -291,7 +292,7 @@ with row9_1:
     plot_x_selection_1 = st.selectbox("Which measure do you want to analyze?",["Nation","CCity","Team","Position","Foot"], key= 'num_1')
     plot_x_selection_2 = st.selectbox("Which measure do you want to analyze?",["Potential","Wages","Sell_Value","Ability","Age"], key= 'num_2')
 with row9_2:
-    chart = alt.Chart(df_2).mark_bar().encode(x=alt.X(plot_x_selection_1,sort='-y'),y="mean("+plot_x_selection_2+")").interactive()
+    chart = alt.Chart(df_2).mark_bar().encode(x=alt.X(plot_x_selection_1,sort='-y'),y="mean("+plot_x_selection_2+")").properties(height=400).interactive()
     st.altair_chart(chart)
 
 
@@ -302,29 +303,42 @@ with row9_2:
 row10_spacer1, row10_1, row10_spacer2 = st.columns((.2, 7.1, .2))
 with row10_1:
     st.subheader('Model Visualizations')
-row11_spacer1, row11_1, row11_spacer2, row11_2, row11_spacer3  = st.columns((.2, 2.3, .4, 4.4, .2))
+    st.markdown(
+        'Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
+row11_spacer1, row11_1, row11_spacer2, row11_2, row11_spacer3, row11_3  = st.columns((.2, 1.5, .2, 1.5, .2, 1.5))
 with row11_1:
-    st.markdown('Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
     show_me_Nation = st.selectbox("Choose the Player's Nation of League ",
                                   df_2.CNation.value_counts().index.tolist(),
                                   key="model_nation")
+with row11_2:
     show_me_league = st.selectbox("Choose the player's League",
                                  df_2[df_2.CNation == show_me_Nation]["CLeague"].value_counts().index.tolist(),
                                  key="model_league")
-
-with row11_2:
+with row11_3:
+    show_me_metric = st.selectbox("Choose Metrics ",
+                                  ["MAE","RMSE"],
+                                  key="model_metrics")
+row12_spacer1, row12_1, row12_spacer2, row12_2, row12_spacer3 = st.columns((.2, 2.3, 0.8, 4, .4))
+with row12_1:
     chart_1 = alt.Chart(df_X_test[df_X_test["CLeague"]==show_me_league]).mark_circle().encode(x="Wages",y="y_pred").interactive()
     chart_2 = alt.Chart(df_X_test[df_X_test["CLeague"]==show_me_league]).mark_line(color="red").encode(x="Wages", y="Wages").interactive()
     st.altair_chart(chart_1+chart_2)
-
-
-
-
-
-
-
-
-
+with row12_2:
+    def rmse(g):
+        rmse = np.sqrt(mean_squared_error(g['Wages'], g['y_pred']))
+        return pd.Series(dict(rmse=rmse))
+    def mae(g):
+        mae = mean_absolute_error(g['Wages'], g['y_pred'])
+        return pd.Series(dict(mae=mae))
+    if show_me_metric=="RMSE":
+        df_grpby_1 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation))&(df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(rmse).reset_index())
+        chart_3 = alt.Chart(df_grpby_1).mark_bar().encode(x=alt.X("Team", sort='-y'), y="rmse").interactive()
+        st.altair_chart(chart_3)
+    else:
+        df_grpby_2 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation)) & (
+                    df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(mae).reset_index())
+        chart_4 = alt.Chart(df_grpby_2).mark_bar().encode(x=alt.X("Team", sort='-y'), y="mae").interactive()
+        st.altair_chart(chart_4)
 
 df_2.info(verbose=True)
 
@@ -333,8 +347,6 @@ df_2.info(verbose=True)
 # 3- kategorik - nümerik
 # 4- model sonrası çıktılar-
 #    - Hangi liglerde daha iyi tahmin yapılmıştır.
-
-
 
 
 
