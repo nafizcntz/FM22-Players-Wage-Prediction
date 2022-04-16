@@ -12,11 +12,15 @@ from folium.plugins import MarkerCluster
 import folium
 import streamlit.components.v1 as components
 from streamlit_folium import folium_static
+import warnings
+warnings.filterwarnings("ignore")
+
 st.set_page_config(layout="wide")
 
 
 df = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_deployment.csv")
 df_2 = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_deployment_2.csv")
+df_X_test = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_X_test.csv")
 ####################
 ### INTRODUCTION ###
 ####################
@@ -92,6 +96,7 @@ all_player_selected = st.sidebar.selectbox("Choose the player's Name",
                                            [""]+df_2[df_2.Team == all_teams_selected]["Name"].value_counts().index.tolist(),
                                            format_func=lambda x: "" if x == "" else x)
 
+
 def fm22_prediction(df,name):
     if name == "":
         return ""
@@ -103,7 +108,6 @@ def fm22_prediction(df,name):
         X = final_df.drop(["Wages","Name"], axis=1)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
         return model.predict(X.iloc[index].values.reshape(1, -1))
-
 
 wage = fm22_prediction(df,all_player_selected)
 
@@ -241,32 +245,94 @@ if button_4:
 #####
 
 
-### TEAM ###
+### Count plot ###
 row4_spacer1, row4_1, row4_spacer2 = st.columns((.2, 7.1, .2))
 with row4_1:
-    st.subheader('Analysis per Team')
+    st.subheader('Count Plots')
 row5_spacer1, row5_1, row5_spacer2, row5_2, row5_spacer3  = st.columns((.2, 2.3, .4, 4.4, .2))
 with row5_1:
-
     st.markdown('Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
-    plot_x_per_team_selected = st.selectbox("Which attribute do you want to analyze?",["a","b","c"], key = 'attribute_team')
-    plot_x_per_team_type = st.selectbox("Which measure do you want to analyze?",["a","b","c"], key= 'measure_team')
+    plot_x_per_team_type = st.selectbox("Which measure do you want to analyze?",["Team","Nation","CLeague","Wages","Ability","Potential","Age"], key= 'measure_team')
 with row5_2:
-    df_team_ctotalwages = df_2[~df_2["Team"].duplicated()][["Team", "CTotal_Wages"]].sort_values(by="CTotal_Wages", ascending=False).reset_index(drop=True)
-    df_team_ctotalwages["CTotal_Wages_PTeam"] = np.nan
-    dict_ = df_2["Team"].value_counts().to_dict()
-    df_2.groupby("Team").agg({"CTotal_Wages":"sum"}).sort_values(by="CTotal_Wages",ascending=False)
-    for i,col in enumerate(df_team_ctotalwages["Team"]):
-        df_team_ctotalwages.loc[i,"CTotal_Wages_PTeam"] = df_team_ctotalwages.loc[i,"CTotal_Wages"] / dict_[col]
-    df_team_ctotalwages = df_team_ctotalwages.sort_values(by="CTotal_Wages_PTeam", ascending=False)
-    if plot_x_per_team_selected == "b":
-        sns.barplot(x="Team", y="CTotal_Wages_PTeam", data=df_team_ctotalwages[:10])
-        plt.ticklabel_format(style="plain", axis="y")
-        plt.xticks(rotation=45)
-        st.pyplot()
+    import altair as alt
+    import streamlit as st
+    if  df_2[plot_x_per_team_type].dtype== "O":
+        chart = alt.Chart(df_2).mark_bar().encode(x=alt.X(plot_x_per_team_type,sort='-y'), y=alt.Y('count()')).interactive()
+        st.altair_chart(chart)
+    else:
+        chart = alt.Chart(df_2).mark_bar().encode(x=plot_x_per_team_type, y='count()').interactive()
+        st.altair_chart(chart)
+
+#########
+# Nümerik - mümerik
+#########
+row6_spacer1, row6_1, row6_spacer2 = st.columns((.2, 7.1, .2))
+with row6_1:
+    st.subheader('Numeric variables')
+row7_spacer1, row7_1, row7_spacer2, row7_2, row7_spacer3  = st.columns((.2, 2.3, .4, 4.4, .2))
+with row7_1:
+    st.markdown('Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
+    plot_x_selection_1 = st.selectbox("Which measure do you want to analyze?",["Wages","Sell_Value","Ability","Potential","Age"], key= 'corr_1')
+    plot_x_selection_2 = st.selectbox("Which measure do you want to analyze?",["Potential","Wages","Sell_Value","Ability","Age"], key= 'corr_2')
+with row7_2:
+    chart = alt.Chart(df_2).mark_circle().encode(x=plot_x_selection_2,y=plot_x_selection_1).interactive()
+    st.altair_chart(chart)
+
+######################
+# Kategorik - Nümerik
+######################
+
+row8_spacer1, row8_1, row8_spacer2 = st.columns((.2, 7.1, .2))
+with row8_1:
+    st.subheader('Categorical Variables')
+row9_spacer1, row9_1, row9_spacer2, row9_2, row9_spacer3  = st.columns((.2, 2.3, .4, 4.4, .2))
+with row9_1:
+    st.markdown('Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
+    plot_x_selection_1 = st.selectbox("Which measure do you want to analyze?",["Nation","CCity","Team","Position","Foot"], key= 'num_1')
+    plot_x_selection_2 = st.selectbox("Which measure do you want to analyze?",["Potential","Wages","Sell_Value","Ability","Age"], key= 'num_2')
+with row9_2:
+    chart = alt.Chart(df_2).mark_bar().encode(x=alt.X(plot_x_selection_1,sort='-y'),y="mean("+plot_x_selection_2+")").interactive()
+    st.altair_chart(chart)
+
+
+######################
+# Model Visualizations
+######################
+
+row10_spacer1, row10_1, row10_spacer2 = st.columns((.2, 7.1, .2))
+with row10_1:
+    st.subheader('Model Visualizations')
+row11_spacer1, row11_1, row11_spacer2, row11_2, row11_spacer3  = st.columns((.2, 2.3, .4, 4.4, .2))
+with row11_1:
+    st.markdown('Investigate a variety of stats for each team. Which team scores the most goals per game? How does your team compare in terms of distance ran per game?')
+    show_me_Nation = st.selectbox("Choose the Player's Nation of League ",
+                                  df_2.CNation.value_counts().index.tolist(),
+                                  key="model_nation")
+    show_me_league = st.selectbox("Choose the player's League",
+                                 df_2[df_2.CNation == show_me_Nation]["CLeague"].value_counts().index.tolist(),
+                                 key="model_league")
+
+with row11_2:
+    chart_1 = alt.Chart(df_X_test[df_X_test["CLeague"]==show_me_league]).mark_circle().encode(x="Wages",y="y_pred").interactive()
+    chart_2 = alt.Chart(df_X_test[df_X_test["CLeague"]==show_me_league]).mark_line(color="red").encode(x="Wages", y="Wages").interactive()
+    st.altair_chart(chart_1+chart_2)
 
 
 
+
+
+
+
+
+
+
+df_2.info(verbose=True)
+
+# 1- count plot
+# 2- Nümerik - Nümerik(corr)
+# 3- kategorik - nümerik
+# 4- model sonrası çıktılar-
+#    - Hangi liglerde daha iyi tahmin yapılmıştır.
 
 
 

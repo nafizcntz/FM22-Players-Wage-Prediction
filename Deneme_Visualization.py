@@ -198,6 +198,7 @@ na_col = missing_values_table(df_new)
 missing_values_table(df_new).head(20)
 cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 
+
 # Outlier Görselleştirme
 outlier_plot(df_new,num_cols)
 
