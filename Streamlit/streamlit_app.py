@@ -89,7 +89,7 @@ def fm22_prediction(df,name):
         return ""
     else:
         index = df[df["Name"] == str(name)].index.tolist()[0]
-        final_df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_Deployment.csv")
+        final_df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment.csv")
         model = joblib.load(r'/app/fm22-players-wage-prediction/Streamlit/voting_clf_2.pkl')
         y = final_df["Wages"]
         X = final_df.drop(["Wages","Name"], axis=1)
@@ -199,11 +199,11 @@ with row17_2:
     if button_2:
         a = False
 with row17_3:
-    button_3 = st.button("Potential According to the Countries of the Players' Clubs ")
+    button_3 = st.button("Potential Average According to the Countries of the Players' Clubs ")
     if button_3:
         a=False
 with row17_4:
-    button_4 = st.button("The Pote")
+    button_4 = st.button("Potential Average According to Nationalities of the Players")
     if button_4:
         a = False
 if a:
@@ -293,7 +293,7 @@ with row9_2:
 
 row10_spacer1, row10_1, row10_spacer2 = st.columns((.2, 7.1, .2))
 with row10_1:
-    st.subheader('Model Visualizations')
+    st.header('Model Visualizations')
     st.markdown('Data restricted according to the selected country and league;')
     st.markdown('1 - Visualization based on model prediction and actual values')
     st.markdown('2 - Visualization of the model according to the selected metric')
