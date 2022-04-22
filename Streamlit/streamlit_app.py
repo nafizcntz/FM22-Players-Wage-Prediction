@@ -1,20 +1,10 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import pickle
-import time
-from matplotlib import pyplot as plt
-from matplotlib.ticker import FuncFormatter
-import seaborn as sns
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error,mean_absolute_error,accuracy_score
 import joblib
-from folium.plugins import MarkerCluster
-import folium
 import streamlit.components.v1 as components
-from streamlit_folium import folium_static
-import warnings
-warnings.filterwarnings("ignore")
 
 st.set_page_config(layout="wide")
 
