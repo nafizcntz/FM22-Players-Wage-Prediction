@@ -198,7 +198,7 @@ na_col = missing_values_table(df_new)
 missing_values_table(df_new)
 cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 # Outlier Görselleştirme
-outlier_plot(df_new,"Wages")
+outlier_plot(df_new,num_cols)
 
 
 # Baskılama işlemi yapmadık sadece wage değişeknindeki outlier datayı sildik
@@ -215,36 +215,6 @@ outlier_plot(df_new,"Wages")
 #  Oyuncuların kuluplerine bakarak club datasetindeki bilgileri oyuncu özelinde
 # atama işlemi yaptık
 
-
-df_new[df_clubs.columns] = np.nan
-for i,col in enumerate(df_new["Team"]):
-    for j,col_club in enumerate(df_clubs["CName"]):
-        if col == col_club:
-            df_new.iloc[i,55:] = df_clubs.loc[j]
-            break
-
-# Fm21'e club datasını ekleme
-df_fm21[df_clubs_fm21.columns] = np.nan
-for i,col in enumerate(df_fm21["Team"]):
-    for j,col_club in enumerate(df_clubs_fm21["CName"]):
-        if col == col_club:
-            df_fm21.iloc[i,54:] = df_clubs_fm21.loc[j]
-            break
-missing_values_table(df_fm21)
-
-# FM21 ekleme
-df_fm21.drop('Unnamed: 0',axis=1,inplace=True)
-df_new[df_fm21.columns[4:]+ "_fm21"] = np.nan
-lst =[i for i in df_new.columns if "fm21" in i ]
-
-for i,col in enumerate(df_new["Name"]):
-    for j,col_fm21 in enumerate(df_fm21["Name"]):
-        if col == col_fm21:
-            df_new.loc[i,lst] = df_fm21.iloc[j,4:].values
-            break
-missing_values_table(df_new).head(40)
-
-
 # çiftleme verileri silme
 df_new = df_new[~df_new["Link"].duplicated()]
 
@@ -254,10 +224,10 @@ df_new = df_new.replace(to_replace="None", value=np.nan)
 
 # Release_Clause ---> Çok fazla boş değer bulunduğundan ötürü veri setinden çıkarttık.
 # Diğer kolonlar model açısından bilgi içermiyeceğinden ötürü çıkarttık
-df_name_Cname = df_new[["Name","CName","Img_Link"]]
-df_new.drop(["Unnamed: 0",'Link',"Release_Clause","CStatus_fm21","CName","CLink","CName_fm21","CLink_fm21","CStatus","Unique_ID_fm21",'Unique_ID',"Release_Clause_fm21"], axis=1,inplace=True)
+df_name_Cname = df_new[["Name","Img_Link"]]
+df_new.drop(["Unnamed: 0",'Link',"Release_Clause",'Unique_ID',"Img_Link"], axis=1,inplace=True)
 
-
+df_new.drop("Img_Link",axis=1,inplace=True)
 #############################
 # Boş değer doldurma
 ############################
@@ -279,16 +249,8 @@ missing_df.head(40)
 df_new.loc[(df_new["Potential"].isnull()) & (df_new["Ability"] >= 70), "Potential"] = 90
 df_new.loc[(df_new["Potential"].isnull()) & (df_new["Ability"] < 70), "Potential"] = 80
 
-# Potential 21
-df_new.loc[(df_new["Potential_fm21"].isnull()) & (df_new["Ability_fm21"] >= 70), "Potential_fm21"] = 90
-df_new.loc[(df_new["Potential_fm21"].isnull()) & (df_new["Ability_fm21"] < 70), "Potential_fm21"] = 80
-
-# Fm21 verisi olmayanları sildik
-df_new = df_new[~df_new["Ability_fm21"].isnull()]
 
 #Geri Kalanları sildik
-df_new[[i for i in df_new.columns if "Name" not in i]].dropna()
-
 
 df_new.dropna(inplace=True)
 
@@ -299,106 +261,22 @@ df_new.dropna(inplace=True)
 # Length
 df_new["Length"] = df_new["Length"].str[:3]
 df_new["Length"] = df_new["Length"].astype(int)
-# Length fm21
-df_new["Length_fm21"] = df_new["Length_fm21"].str[:3]
-df_new["Length_fm21"] = df_new["Length_fm21"].astype(int)
+
 
 
 # Weight
 df_new["Weight"] = df_new["Weight"].str[:2]
 df_new["Weight"] = df_new["Weight"].astype(int)
-# Weight_fm21
-df_new["Weight_fm21"] = df_new["Weight_fm21"].str[:2]
-df_new["Weight_fm21"] = df_new["Weight_fm21"].astype(int)
 
 
 #Wages
 df_new["Wages"] = df_new["Wages"].str[1:-2].str.replace(",", "").astype(float)
 
-#Wages_fm21
-df_new["Wages_fm21"] = df_new["Wages_fm21"].str[1:-2].str.replace(",", "").astype(float)
-
 # Contract_End
 df_new["Contract_End"] = df_new["Contract_End"].apply(pd.to_datetime)
 df_new['Contract_End_Year'] = df_new["Contract_End"].dt.year
 
-# Contract_End_21
-df_new["Contract_End_fm21"] = df_new["Contract_End_fm21"].apply(pd.to_datetime)
-df_new['Contract_End_Year_fm21'] = df_new["Contract_End_fm21"].dt.year
 
-
-
-# Sell_Value_fm21
-df_new = df_new.loc[df_new["Sell_Value_fm21"] != "Not for sale"]
-df_new["Sell_Value_fm21"] = df_new["Sell_Value_fm21"].str[2:].str.replace(",", "").astype(float)
-
-
-# CBalance
-df_new.loc[df_new["CBalance"].str.contains("K") == True,"CBalance"] = df_new[df_new["CBalance"].str.contains("K") == True]["CBalance"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CBalance"].str.contains("M") == True,"CBalance"] = df_new[df_new["CBalance"].str.contains("M") == True]["CBalance"].str[1:-1].astype(float) * (10**6)
-df_new["CBalance"] = df_new["CBalance"].astype(float)
-
-# CBalance_fm21
-df_new.loc[df_new["CBalance_fm21"].str.contains("K") == True,"CBalance_fm21"] = df_new[df_new["CBalance_fm21"].str.contains("K") == True]["CBalance_fm21"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CBalance_fm21"].str.contains("M") == True,"CBalance_fm21"] = df_new[df_new["CBalance_fm21"].str.contains("M") == True]["CBalance_fm21"].str[1:-1].astype(float) * (10**6)
-df_new["CBalance_fm21"] = df_new["CBalance_fm21"].astype(float)
-
-
-# CTransfer_Budget
-df_new.loc[df_new["CTransfer_Budget"].str.contains("K") == True,"CTransfer_Budget"] = df_new[df_new["CTransfer_Budget"].str.contains("K") == True]["CTransfer_Budget"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CTransfer_Budget"].str.contains("M") == True,"CTransfer_Budget"] = df_new[df_new["CTransfer_Budget"].str.contains("M") == True]["CTransfer_Budget"].str[1:-1].astype(float) * (10**6)
-df_new["CTransfer_Budget"] = df_new["CTransfer_Budget"].astype(float)
-
-# CTransfer_Budget_fm21
-df_new.loc[df_new["CTransfer_Budget_fm21"].str.contains("K") == True,"CTransfer_Budget_fm21"] = df_new[df_new["CTransfer_Budget_fm21"].str.contains("K") == True]["CTransfer_Budget_fm21"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CTransfer_Budget_fm21"].str.contains("M") == True,"CTransfer_Budget_fm21"] = df_new[df_new["CTransfer_Budget_fm21"].str.contains("M") == True]["CTransfer_Budget_fm21"].str[1:-1].astype(float) * (10**6)
-df_new["CTransfer_Budget_fm21"] = df_new["CTransfer_Budget_fm21"].astype(float)
-
-
-# CTotal_Wages
-df_new["CTotal_Wages"] = df_new["CTotal_Wages"].str[:-2]
-df_new["CTotal_Wages"] = df_new["CTotal_Wages"].str.strip()
-df_new.loc[df_new["CTotal_Wages"].str.contains("K") == True,"CTotal_Wages"] = df_new[df_new["CTotal_Wages"].str.contains("K") == True]["CTotal_Wages"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CTotal_Wages"].str.contains("M") == True,"CTotal_Wages"] = df_new[df_new["CTotal_Wages"].str.contains("M") == True]["CTotal_Wages"].str[1:-1].astype(float) * (10**6)
-df_new["CTotal_Wages"] = df_new["CTotal_Wages"].astype(float)
-
-# CTotal_Wages_fm21
-df_new["CTotal_Wages_fm21"] = df_new["CTotal_Wages_fm21"].str[:-2]
-df_new["CTotal_Wages_fm21"] = df_new["CTotal_Wages_fm21"].str.strip()
-df_new.loc[df_new["CTotal_Wages_fm21"].str.contains("K") == True,"CTotal_Wages_fm21"] = df_new[df_new["CTotal_Wages_fm21"].str.contains("K") == True]["CTotal_Wages_fm21"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CTotal_Wages_fm21"].str.contains("M") == True,"CTotal_Wages_fm21"] = df_new[df_new["CTotal_Wages_fm21"].str.contains("M") == True]["CTotal_Wages_fm21"].str[1:-1].astype(float) * (10**6)
-df_new["CTotal_Wages_fm21"] = df_new["CTotal_Wages_fm21"].astype(float)
-
-# CRemaining_Wages
-df_new["CRemaining_Wages"] = df_new["CRemaining_Wages"].str[:-2]
-df_new["CRemaining_Wages"] = df_new["CRemaining_Wages"].str.strip()
-df_new.loc[df_new["CRemaining_Wages"].str.contains("K") == True,"CRemaining_Wages"] = df_new[df_new["CRemaining_Wages"].str.contains("K") == True]["CRemaining_Wages"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CRemaining_Wages"].str.contains("M") == True,"CRemaining_Wages"] = df_new[df_new["CRemaining_Wages"].str.contains("M") == True]["CRemaining_Wages"].str[1:-1].astype(float) * (10**6)
-df_new["CRemaining_Wages"] = df_new["CRemaining_Wages"].astype(float)
-
-# CRemaining_Wages_fm21
-df_new["CRemaining_Wages_fm21"] = df_new["CRemaining_Wages_fm21"].str[:-2]
-df_new["CRemaining_Wages_fm21"] = df_new["CRemaining_Wages_fm21"].str.strip()
-df_new.loc[df_new["CRemaining_Wages_fm21"].str.contains("K") == True,"CRemaining_Wages_fm21"] = df_new[df_new["CRemaining_Wages_fm21"].str.contains("K") == True]["CRemaining_Wages_fm21"].str[1:-1].astype(float) * 1000
-df_new.loc[df_new["CRemaining_Wages_fm21"].str.contains("M") == True,"CRemaining_Wages_fm21"] = df_new[df_new["CRemaining_Wages_fm21"].str.contains("M") == True]["CRemaining_Wages_fm21"].str[1:-1].astype(float) * (10**6)
-df_new["CRemaining_Wages_fm21"] = df_new["CRemaining_Wages_fm21"].astype(float)
-
-
-# CFounded
-df_new["CFounded"] = pd.to_numeric(df_new["CFounded"],errors='coerce')
-
-# CFounded_fm21
-df_new["CFounded_fm21"] = pd.to_numeric(df_new["CFounded_fm21"],errors='coerce')
-
-# CMost_Talented_XI
-df_new["CMost_Talented_XI"] = df_new["CMost_Talented_XI"].astype(int)
-
-# CMost_Talented_XI_fm21
-df_new = df_new[~(df_new["CMost_Talented_XI_fm21"]== "NAN")]
-df_new["CMost_Talented_XI_fm21"] = df_new["CMost_Talented_XI_fm21"].astype(int)
-
-#CBest_XI_fm21
-df_new["CBest_XI_fm21"] = df_new["CBest_XI_fm21"].astype(int)
 
 # Oyuncuların pozisyon bilgisinin sınıflarını birleştirdik
 df_new.loc[((df_new['Position'].str.contains("ST")) | (df_new['Position'].str.contains("AMR")) | (df_new['Position'].str.contains("AML"))), "Position"] = "Striker"
@@ -462,40 +340,6 @@ sns.kdeplot(df_new["Wages"],shade=True,ax=ax[0])
 sns.kdeplot(df_new["Sell_Value"],shade=True,ax=ax[1])
 plt.savefig("visualization/Wage_and_Sell_Value_Dağılımları.png")
 plt.show()
-
-# # Dünya haritası ile görselleştirme
-# df_geo = df_new[["CNation","CCity"]]
-# df_geo["Long"] = np.nan
-# df_geo["Lat"] = np.nan
-# geolocator = Nominatim(user_agent="my_user_agent")
-# lst_nation = df_geo["CNation"].value_counts().index.tolist()
-# lst_city = df_geo["CCity"].value_counts().index.tolist()
-# dict_nation={}
-# for i in lst_city:
-#     loc = geolocator.geocode(i)
-#     if loc:
-#         dict_nation.update({i:[loc.longitude,loc.latitude]})
-#     else:
-#         print(i)
-#         dict_nation.update({i:[37.1833,67.3667]})
-#
-# df_geo["Potential"] = df_new["Potential"]
-# df_geo["Wages"] = df_new["Wages"]
-# df_geo["Potential_Mean"] = np.nan
-# df_geo["Wages_Mean"] = np.nan
-# for i in lst_city :
-#     df_geo.loc[df_geo["CCity"] == i, "Long"] = dict_nation[i][0]
-#     df_geo.loc[df_geo["CCity"] == i, "Lat"] = dict_nation[i][1]
-#
-# for j in lst_nation:
-#     df_geo.loc[df_geo["CNation"] == j, "Potential_Mean"] = df_geo[df_geo["CNation"] == j]["Potential"].mean()
-# for j in lst_nation:
-#     df_geo.loc[df_geo["CNation"] == j, "Wages_Mean"] = df_geo[df_geo["CNation"] == j]["Wages"].mean()
-#
-# df_geo[["Name","CName","Img_Link"]]= df_name_Cname
-# df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]] = df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]]
-
-# df_geo.to_csv("data/df_geo.csv")
 
 df_geo = pd.read_csv("data/df_geo.csv")
 geo=r"archive/countries.geojson"
@@ -583,24 +427,12 @@ for i in df_geo.index:
 marker.save('visualization/Image_Map.html')
 
 
-for (index, row) in df.iterrows():
-    if row.loc['BRANCH'] == 1:
-        iframe = folium.IFrame('Account#:' + str(row.loc['ACCT']) + '<br>' + 'Name: ' + row.loc['NAME'] + '<br>' + 'Terr#: ' + str(row.loc['TERR']))
-        popup = folium.Popup(iframe, min_width=300, max_width=300)
-        folium.Marker(location=[row.loc['LAT'], row.loc['LON']], icon=folium.Icon(color=row.loc['COLOR'], icon='map-marker', prefix='fa'), popup=popup).add_to(map1)
-
-
-
-
 ############################
 # Outlier
 ############################
 
 # Filtreleme
-df_new = df_new.loc[df_new["Wages"] < 45270.0]
-df_new.shape
-
-
+df_new = df_new.loc[df_new["Wages"] < 36682.5]
 
 cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 outlier_replace(df_new,num_cols)
@@ -667,17 +499,6 @@ df_new["Contrat_end_left_year"] = (df_new["Contract_End"].dt.year-today_date.yea
 df_new["Contrat_end_left_month"] = (df_new["Contract_End"]-today_date)/np.timedelta64(1,"M")
 df_new.drop("Contract_End",axis=1,inplace=True)
 
-# fm21
-today_date = dt.datetime(2021, 1, 1)
-df_new['Contrat_end_month_fm21'] = df_new["Contract_End_fm21"].dt.month
-df_new['Contrat_end_day_fm21'] = df_new["Contract_End_fm21"].dt.day
-df_new['Contrat_end_year_fm21'] = df_new["Contract_End_fm21"].dt.year
-df_new["Contrat_end_left_days_fm21"] = (df_new["Contract_End_fm21"]-today_date).dt.days
-df_new["Contrat_end_left_year_fm21"] = (df_new["Contract_End_fm21"].dt.year-today_date.year)
-df_new["Contrat_end_left_month_fm21"] = (df_new["Contract_End_fm21"]-today_date)/np.timedelta64(1,"M")
-df_new.drop("Contract_End_fm21",axis=1,inplace=True)
-
-
 # Oyuncuların yaşlarına ve potensiyel güçlerine göre sınıfladırma yapılarak yeni değişken üretildi
 df_new["Age_Potential_Seg"] = ""
 df_new.loc[(df_new["Age"] <= 20) & (df_new["Potential"] >= 80), "Age_Potential_Seg"] = "Wonderkid"
@@ -697,18 +518,9 @@ df_new.loc[(35 < df_new["Age"]) & (df_new["Potential"] < 80), "Age_Potential_Seg
 #  Yeni değişkenler
 
 df_new["Ability_Potential"] = df_new["Ability"] * df_new["Potential"]
-df_new["New_Most_Best"] = df_new["CBest_XI"] - df_new["CMost_Talented_XI"]
-df_new["New_Rep_Best_Tal"] = df_new["CBest_XI"] * df_new["CMost_Talented_XI"] * df_new["CReputation"]
 df_new["New_Tack_Mark"] = df_new["Tackling"] + df_new["Marking"]
 df_new["New_Pos_Mark"] = df_new["Positioning"] * df_new["Marking"]
 df_new["New_Jump_Leng"] = df_new["Length"] / df_new["Jumping_Reach"]
-
-#FM22 - FM21
-
-df_new["Ability_Change"] = df_new["Ability"] - df_new["Ability_fm21"]
-df_new["Potential_Change"] = df_new["Potential"] - df_new["Potential_fm21"]
-df_new["Sell_Value_Change"] = df_new["Sell_Value"] - df_new["Sell_Value_fm21"]
-df_new
 
 
 # Kategori
@@ -749,10 +561,7 @@ df_new.drop("Caps_Goals", axis=1, inplace=True)
 df_new["Caps"] = df_new["Caps"].astype(int)
 df_new["Goals"] = df_new["Goals"].astype(int)
 
-df_new[['Caps_fm21', 'Goals_fm21']] = df_new['Caps_Goals_fm21'].str.split('/', expand=True)
-df_new.drop("Caps_Goals_fm21", axis=1, inplace=True)
-df_new["Caps_fm21"] = df_new["Caps_fm21"].astype(int)
-df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
+
 
 #####################
 #Eksik değer analizi
@@ -771,49 +580,29 @@ cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 # Nation ile CNation kolonlarında ortak değerler olduğundan ötürü aynı değerlerin
 # atamsı labelencoder ile yapıldı.
 labelencoder = LabelEncoder()
-encoder_df = df_new[["Nation", "CNation","CNation_fm21"]]
+encoder_df = df_new[["Nation"]]
 #encoder_df = df_new[["Nation"]]
 labelencoder.fit(encoder_df.stack().unique())
 encoder_df['Nation'] = labelencoder.transform(encoder_df['Nation'])
-encoder_df['CNation'] = labelencoder.transform(encoder_df['CNation'])
-encoder_df['CNation_fm21'] = labelencoder.transform(encoder_df['CNation_fm21'])
 df_new["Nation"] = encoder_df["Nation"]
-df_new["CNation"] = encoder_df["CNation"]
-df_new["CNation_fm21"] = encoder_df["CNation_fm21"]
 
-#############
-labelencoder = LabelEncoder()
-encoder_df = df_new[["CCity", "CCity_fm21"]]
-#encoder_df = df_new[["Nation"]]
-labelencoder.fit(encoder_df.stack().unique())
-encoder_df['CCity'] = labelencoder.transform(encoder_df['CCity'])
-encoder_df['CCity_fm21'] = labelencoder.transform(encoder_df['CCity_fm21'])
-df_new["CCity"] = encoder_df["CCity"]
-df_new["CCity_fm21"] = encoder_df["CCity_fm21"]
 ############
 labelencoder = LabelEncoder()
-encoder_df = df_new[["Team", "Team_fm21"]]
+encoder_df = df_new[["Team"]]
 #encoder_df = df_new[["Nation"]]
 labelencoder.fit(encoder_df.stack().unique())
 encoder_df['Team'] = labelencoder.transform(encoder_df['Team'])
-encoder_df['Team_fm21'] = labelencoder.transform(encoder_df['Team_fm21'])
 df_new["Team"] = encoder_df["Team"]
-df_new["Team_fm21"] = encoder_df["Team_fm21"]
 ##################
 labelencoder = LabelEncoder()
-encoder_df = df_new[["CLeague", "CLeague_fm21"]]
-#encoder_df = df_new[["Nation"]]
-labelencoder.fit(encoder_df.stack().unique())
-encoder_df['CLeague'] = labelencoder.transform(encoder_df['CLeague'])
-encoder_df['CLeague_fm21'] = labelencoder.transform(encoder_df['CLeague_fm21'])
-df_new["CLeague"] = encoder_df["CLeague"]
-df_new["CLeague_fm21"] = encoder_df["CLeague_fm21"]
+
+
 
 
 #df_new.drop(["CNation_fm21","CCity_fm21"],axis=1,inplace=True)
 
 # Label Encoder ile yapıldı
-df_new = one_hot_encoder(df_new, ["Foot","Foot_fm21", "Position", "Age_Potential_Seg","Kategori"], drop_first=True)
+df_new = one_hot_encoder(df_new, ["Foot", "Position", "Age_Potential_Seg","Kategori"], drop_first=True)
 df_new.info(verbose=True)
 
 
@@ -877,7 +666,7 @@ final_df =df_new
 # Model Kurma
 #########################################
 y = final_df["Wages"]
-X = final_df.drop(["Wages","Name","Img_Link"],axis=1)
+X = final_df.drop(["Wages","Name"],axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
 
 
