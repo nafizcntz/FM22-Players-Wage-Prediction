@@ -89,8 +89,8 @@ def fm22_prediction(df,name):
         return ""
     else:
         index = df[df["Name"] == str(name)].index.tolist()[0]
-        final_df = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model Deployment\Model_Deployment.csv")
-        model = joblib.load(r'C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model Deployment\voting_clf_2.pkl')
+        final_df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_Deployment.csv")
+        model = joblib.load(r'/app/fm22-players-wage-prediction/Streamlit/voting_clf_2.pkl')
         y = final_df["Wages"]
         X = final_df.drop(["Wages","Name"], axis=1)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
@@ -183,7 +183,7 @@ st.text("")
 st.text("")
 st.subheader("Mapping Players by Team")
 st.write("The Cities of the Players' Team visualized on the World Map")
-html = open(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Image_Map.html",'r',encoding='utf-8')
+html = open(r"/app/fm22-players-wage-prediction/Streamlit/Image_Map.html",'r',encoding='utf-8')
 source = html.read()
 components.html(source,width=850,height=500)
 
@@ -208,28 +208,28 @@ with row17_4:
         a = False
 if a:
     html = open(
-        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Nation_Heatmap.html", 'r',
+        r"/app/fm22-players-wage-prediction/Streamlit/Nation_Heatmap.html", 'r',
         encoding='utf-8')
     source = html.read()
     components.html(source, width=850, height=500)
 
 if button_2:
     html = open(
-        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Maaş_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
+        r"/app/fm22-players-wage-prediction/Streamlit/Maaş_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
         encoding='utf-8')
     source = html.read()
     components.html(source, width=850, height=500)
     a= False
 if button_3:
     html = open(
-        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
+        r"/app/fm22-players-wage-prediction/Streamlit/Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
         encoding='utf-8')
     source = html.read()
     components.html(source, width=850, height=500)
     a = False
 if button_4:
     html = open(
-        r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\visualization\Potensiyel_ortalamasına_göre_ülke_dağılımı.html", 'r',
+        r"/app/fm22-players-wage-prediction/Streamlit/Potensiyel_ortalamasına_göre_ülke_dağılımı.html", 'r',
         encoding='utf-8')
     source = html.read()
     components.html(source, width=850, height=500)
@@ -332,13 +332,7 @@ with row12_2:
         chart_4 = alt.Chart(df_grpby_2).mark_bar().encode(x=alt.X("Team", sort='-y'), y="mae").interactive()
         st.altair_chart(chart_4)
 
-df_2.info(verbose=True)
 
-# 1- count plot
-# 2- Nümerik - Nümerik(corr)
-# 3- kategorik - nümerik
-# 4- model sonrası çıktılar-
-#    - Hangi liglerde daha iyi tahmin yapılmıştır.
 
 
 
