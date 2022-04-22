@@ -9,9 +9,9 @@ import streamlit.components.v1 as components
 st.set_page_config(layout="wide")
 
 
-df = pd.read_csv(r"\Model_deployment.csv")
-df_2 = pd.read_csv(r"\Model_deployment_2.csv")
-df_X_test = pd.read_csv(r"\Model_X_test.csv")
+df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment.csv")
+df_2 = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment_2.csv")
+df_X_test = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_X_test.csv")
 ####################
 ### INTRODUCTION ###
 ####################
