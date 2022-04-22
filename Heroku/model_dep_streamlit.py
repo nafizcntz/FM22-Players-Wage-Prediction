@@ -19,9 +19,9 @@ warnings.filterwarnings("ignore")
 st.set_page_config(layout="wide")
 
 
-df = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_deployment.csv")
-df_2 = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_deployment_2.csv")
-df_X_test = pd.read_csv(r"C:\Users\ezelb\OneDrive\Belgeler\GitHub\FM22-Players-Wage-Prediction\Model_X_test.csv")
+df = pd.read_csv(r"\Model_deployment.csv")
+df_2 = pd.read_csv(r"\Model_deployment_2.csv")
+df_X_test = pd.read_csv(r"\Model_X_test.csv")
 ####################
 ### INTRODUCTION ###
 ####################
