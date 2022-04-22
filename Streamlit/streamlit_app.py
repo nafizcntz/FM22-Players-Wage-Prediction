@@ -61,7 +61,7 @@ with row3_1:
 st.text('')
 
 ############################
-# Model deploymen
+# Model deployment
 ###########################
 
 ### TEAM SELECTION ###
@@ -84,7 +84,7 @@ all_player_selected = st.sidebar.selectbox("Choose the Player's Name",
                                            format_func=lambda x: "" if x == "" else x)
 
 
-def fm22_prediction(df,name):
+def fm22_prediction(df, name):
     if name == "":
         return ""
     else:
@@ -96,7 +96,7 @@ def fm22_prediction(df,name):
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
         return model.predict(X.iloc[index].values.reshape(1, -1))
 
-wage = fm22_prediction(df,all_player_selected)
+wage = fm22_prediction(df, all_player_selected)
 
 try:
     rw = df[df["Name"] == all_player_selected]["Wages"].tolist()[0]
