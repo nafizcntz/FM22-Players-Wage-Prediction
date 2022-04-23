@@ -35,7 +35,7 @@ df_test = pd.DataFrame(X_test)
 df_2["y_pred"]=y_pred
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=17)
 df_test = df_2.loc[X_test.index]
-
+df_test["CLeague"]
 df_test.to_csv("Model_X_test_2.csv", index=False)
 len(y_pred)
 wage = fm22_prediction(df, str(all_player_selected))
