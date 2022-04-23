@@ -754,7 +754,7 @@ df_new["Caps_fm21"] = df_new["Caps_fm21"].astype(int)
 df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
 
 
-df_new.to_csv("Model_deployment_2.csv",index=False)
+
 
 
 ################
@@ -871,7 +871,7 @@ final_df =df_new
 y = final_df["Wages"]
 X = final_df.drop(["Wages","Name","Img_Link"],axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
-X_test.to_csv("Model_X_test.csv",index=False)
+#X_test.to_csv("Model_X_test.csv",index=False)
 
 def models_(X_train, X_test, y_train, y_test,log=False):
     models = []
@@ -1030,8 +1030,7 @@ from sklearn.ensemble import VotingRegressor
 
 def voting_regression(models, X_train, y_train):
     print("Voting Regression...")
-    voting_clf = VotingRegressor(estimators=[(models[0][0], models[0][1]), (models[1][0], models[1][1]),
-                                              (models[2][0], models[2][1])]).fit(X_train, y_train)
+    voting_clf = VotingRegressor(estimators=[(models[0][0], models[0][1]), (models[1][0], models[1][1]),]).fit(X_train, y_train)
 
     cv_results = cross_validate(voting_clf, X_train, y_train, cv=5,
                                 scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
@@ -1042,7 +1041,7 @@ def voting_regression(models, X_train, y_train):
 
 voting_clf = voting_regression(models,X_train,y_train)
 import joblib
-joblib.dump(voting_clf,"voting_clf_2.pkl")
+joblib.dump(voting_clf, "Streamlit/voting_clf_3.pkl")
 
 
 # VR RMSE   :  3714.203160096844

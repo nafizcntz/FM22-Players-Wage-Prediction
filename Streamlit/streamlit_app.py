@@ -96,7 +96,7 @@ def fm22_prediction(df, name):
     else:
         index = df[df["Name"] == str(name)].index.tolist()[0]
         final_df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment.csv")
-        model = joblib.load(r'/app/fm22-players-wage-prediction/Streamlit/voting_clf_2.pkl')
+        model = joblib.load(r'/app/fm22-players-wage-prediction/Streamlit/voting_clf_3.pkl')
         y = final_df["Wages"]
         X = final_df.drop(["Wages","Name", "Img_Link"], axis=1)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=17)
