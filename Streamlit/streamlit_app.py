@@ -11,7 +11,7 @@ st.set_page_config(layout="wide")
 
 df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment.csv")
 df_2 = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment_2.csv")
-df_X_test = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_X_test.csv")
+df_X_test = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_X_test_2.csv")
 ####################
 ### INTRODUCTION ###
 ####################
