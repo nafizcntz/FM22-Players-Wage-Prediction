@@ -30,9 +30,12 @@ def fm22_prediction(df, name):
         X = final_df.drop(["Wages", "Name", "Img_Link"], axis=1)
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=17)
         return model.predict(X.iloc[index].values.reshape(1, -1))
-        y_pred = model.predict(X_test)
+        y_pred = model.predict(X)
 df_test = pd.DataFrame(X_test)
-df_test["y_pred"] = y_pred
+df_2["y_pred"]=y_pred
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=17)
+df_test = df_2.loc[X_test.index]
+
 df_test.to_csv("Model_X_test_2.csv", index=False)
 len(y_pred)
 wage = fm22_prediction(df, str(all_player_selected))
