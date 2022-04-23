@@ -1,6 +1,4 @@
-# Görselleştirme:
-# -Dünya haritası görselleştirmesi(folium)
-
+import joblib
 import pandas as pd
 import numpy as np
 from matplotlib import pyplot as plt
@@ -198,7 +196,6 @@ na_col = missing_values_table(df_new)
 missing_values_table(df_new)
 cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 # Outlier Görselleştirme
-outlier_plot(df_new,"Wages")
 
 
 # Baskılama işlemi yapmadık sadece wage değişeknindeki outlier datayı sildik
@@ -216,6 +213,7 @@ outlier_plot(df_new,"Wages")
 # atama işlemi yaptık
 
 
+df_clubs["CLeague"] = df_clubs["CNation"] +" " + df_clubs["CLeague"]
 df_new[df_clubs.columns] = np.nan
 for i,col in enumerate(df_new["Team"]):
     for j,col_club in enumerate(df_clubs["CName"]):
@@ -286,9 +284,12 @@ df_new.loc[(df_new["Potential_fm21"].isnull()) & (df_new["Ability_fm21"] < 70), 
 # Fm21 verisi olmayanları sildik
 df_new = df_new[~df_new["Ability_fm21"].isnull()]
 
+# CFounded değeri sıfır olanların silinmesi
+df_new = df_new[df_new["CFounded"] != 0]
+df_new = df_new[df_new["CFounded_fm21"] != 0]
+
 #Geri Kalanları sildik
 df_new[[i for i in df_new.columns if "Name" not in i]].dropna()
-
 
 df_new.dropna(inplace=True)
 
@@ -326,7 +327,7 @@ df_new['Contract_End_Year'] = df_new["Contract_End"].dt.year
 df_new["Contract_End_fm21"] = df_new["Contract_End_fm21"].apply(pd.to_datetime)
 df_new['Contract_End_Year_fm21'] = df_new["Contract_End_fm21"].dt.year
 
-
+df_new[["Length","Weight","Sell_Value","Wages"]]
 
 # Sell_Value_fm21
 df_new = df_new.loc[df_new["Sell_Value_fm21"] != "Not for sale"]
@@ -405,6 +406,11 @@ df_new.loc[((df_new['Position'].str.contains("ST")) | (df_new['Position'].str.co
 df_new.loc[((df_new['Position'].str.contains("DM")) | (df_new['Position'].str.contains("ML")) | (df_new['Position'].str.contains("MC")) | (df_new['Position'].str.contains("MR")) | (df_new['Position'].str.contains("AMC"))), "Position"] = "Midfield"
 df_new.loc[((df_new['Position'].str.contains("DL")) | (df_new['Position'].str.contains("DR")) | (df_new['Position'].str.contains("DC")) | (df_new['Position'].str.contains("WBL")) | (df_new['Position'].str.contains("WBR"))), "Position"] = "Defenders"
 
+# Kolonlardaki anlamsız sıfır değerinin değiştirilmesi
+for i,k in zip(df_new[df_new["Weight"] == 0].Length.index, df_new[df_new["Weight"] == 0].Length.values):
+    df_new.loc[i, "Weight"] = df_new.loc[df_new["Length"] == k, "Weight"].mean()
+
+
 ###################################
 # Veri Görselleştirme
 ###########################
@@ -463,6 +469,9 @@ sns.kdeplot(df_new["Sell_Value"],shade=True,ax=ax[1])
 plt.savefig("visualization/Wage_and_Sell_Value_Dağılımları.png")
 plt.show()
 
+
+
+
 # # Dünya haritası ile görselleştirme
 # df_geo = df_new[["CNation","CCity"]]
 # df_geo["Long"] = np.nan
@@ -494,7 +503,7 @@ plt.show()
 #
 # df_geo[["Name","CName","Img_Link"]]= df_name_Cname
 # df_geo[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]] = df_new[["Ability","Age","Foot","Position","Caps_Goals","Length","Weight","Nation"]]
-
+#
 # df_geo.to_csv("data/df_geo.csv")
 
 df_geo = pd.read_csv("data/df_geo.csv")
@@ -508,7 +517,7 @@ folium.Choropleth(
     geo_data=text,
     data=df_geo,
     columns=['CNation', 'Potential_Mean'],
-    legend_name='Oynadıkları liglere göre Potansiyel Oyuncu Dağılımı',
+    legend_name='Oynadıkları Liglere Göre Potansiyel Oyuncu Dağılımı',
     key_on='feature.properties.ADMIN'
     ).add_to(m)
 m.save('visualization/Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html')
@@ -530,11 +539,10 @@ folium.Choropleth(
     geo_data=text,
     data=df_geo,
     columns=['Nation', 'Potential_Mean'],
-    legend_name='Oynadıkları liglere göre Potansiyel Oyuncu Dağılımı',
+    legend_name='Oyuncuların Milliyetlerine Göre Potansiyel Oyuncu Dağılımı',
     key_on='feature.properties.ADMIN'
     ).add_to(m)
 m.save('visualization/Potensiyel_ortalamasına_göre_ülke_dağılımı.html')
-
 
 
 # Futbolcuların ülkelere göre dağılımını HeatMap olarak  gösterilmesi
@@ -583,21 +591,12 @@ for i in df_geo.index:
 marker.save('visualization/Image_Map.html')
 
 
-for (index, row) in df.iterrows():
-    if row.loc['BRANCH'] == 1:
-        iframe = folium.IFrame('Account#:' + str(row.loc['ACCT']) + '<br>' + 'Name: ' + row.loc['NAME'] + '<br>' + 'Terr#: ' + str(row.loc['TERR']))
-        popup = folium.Popup(iframe, min_width=300, max_width=300)
-        folium.Marker(location=[row.loc['LAT'], row.loc['LON']], icon=folium.Icon(color=row.loc['COLOR'], icon='map-marker', prefix='fa'), popup=popup).add_to(map1)
-
-
-
-
 ############################
 # Outlier
 ############################
 
 # Filtreleme
-df_new = df_new.loc[df_new["Wages"] < 45270.0]
+df_new = df_new.loc[df_new["Wages"] < 45247.5]
 df_new.shape
 
 
@@ -646,7 +645,7 @@ Shapiro_app(df_new,cols)
 
 
 from scipy.stats import pearsonr, stats
-corr, p = stats.spearmanr(df_new["Wages"], df_new["Long_Throws"])
+corr, p = stats.spearmanr(df_new["Wages"], df_new["Sell_Value"])
 print('Spearman correlation: %.3f, P-value score: %.3f' % (corr,p))
 
 
@@ -754,13 +753,9 @@ df_new.drop("Caps_Goals_fm21", axis=1, inplace=True)
 df_new["Caps_fm21"] = df_new["Caps_fm21"].astype(int)
 df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
 
-#####################
-#Eksik değer analizi
-######################
-missing_values_table(df_new)
-df_new.dropna(inplace=True)
-df_new.shape
-df_new.info()
+
+df_new.to_csv("Model_deployment_2.csv",index=False)
+
 
 ################
 # Encoding
@@ -817,8 +812,6 @@ df_new = one_hot_encoder(df_new, ["Foot","Foot_fm21", "Position", "Age_Potential
 df_new.info(verbose=True)
 
 
-
-
 ############
 # Scaling
 #############
@@ -829,7 +822,6 @@ df_new[num_cols] = rs.fit_transform(df_new[num_cols])
 rs.inverse_transform(df_new[num_cols])
 df_new[num_cols] = rs.inverse_transform(df_new[num_cols])
 df_new.head()
-
 
 
 #log1p ---> Sale_Price
@@ -879,7 +871,7 @@ final_df =df_new
 y = final_df["Wages"]
 X = final_df.drop(["Wages","Name","Img_Link"],axis=1)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
-
+X_test.to_csv("Model_X_test.csv",index=False)
 
 def models_(X_train, X_test, y_train, y_test,log=False):
     models = []
@@ -1048,7 +1040,10 @@ def voting_regression(models, X_train, y_train):
     print("VR R-KARE :", (cv_results['test_r2'].mean()))
     return voting_clf
 
-voting_regression(models,X_train,y_train)
+voting_clf = voting_regression(models,X_train,y_train)
+import joblib
+joblib.dump(voting_clf,"voting_clf_2.pkl")
+
 
 # VR RMSE   :  3714.203160096844
 # VR MAE    :  2154.799428883318
