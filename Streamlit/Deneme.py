@@ -11,7 +11,7 @@ st.set_page_config(layout="wide")
 
 df = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Streamlit\Model_deployment.csv")
 df_2 = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Streamlit\Model_deployment_2.csv")
-df_X_test = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Streamlit\Model_X_test.csv")
+df_X_test = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Streamlit\Model_X_test_2.csv")
 
 model = joblib.load(r'C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Streamlit\voting_clf_2.pkl')
 df_X_test["Wages"]
@@ -88,17 +88,14 @@ with row12_2:
         mae = mean_absolute_error(g['Wages'], g['y_pred'])
         return pd.Series(dict(mae=mae))
     if show_me_metric=="RMSE":
-        df_grpby_1 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation))&(df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(rmse).reset_index())
+        df_grpby_1 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str("Argentina"))&(df_X_test["CLeague"] == str("Argentina Superliga Argentina"))].groupby('Team').apply(rmse).reset_index())
         chart_3 = alt.Chart(df_grpby_1).mark_bar().encode(x=alt.X("Team", sort='-y'), y="rmse").interactive()
         st.altair_chart(chart_3)
+        df_X_test["Team"]
     else:
-        df_grpby_2 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation)) & (
-                    df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(mae).reset_index())
+        df_grpby_2 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation)) & (df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(mae).reset_index())
         chart_4 = alt.Chart(df_grpby_2).mark_bar().encode(x=alt.X("Team", sort='-y'), y="mae").interactive()
         st.altair_chart(chart_4)
-
-
-
 
 
 

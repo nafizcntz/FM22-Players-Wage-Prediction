@@ -327,8 +327,7 @@ with row12_2:
         chart_3 = alt.Chart(df_grpby_1).mark_bar().encode(x=alt.X("Team", sort='-y'), y="rmse").interactive()
         st.altair_chart(chart_3)
     else:
-        df_grpby_2 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation)) & (
-                    df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(mae).reset_index())
+        df_grpby_2 = pd.DataFrame(df_X_test[(df_X_test["CNation"] == str(show_me_Nation)) & (df_X_test["CLeague"] == str(show_me_league))].groupby('Team').apply(mae).reset_index())
         chart_4 = alt.Chart(df_grpby_2).mark_bar().encode(x=alt.X("Team", sort='-y'), y="mae").interactive()
         st.altair_chart(chart_4)
 
