@@ -7,9 +7,6 @@ import joblib
 import streamlit.components.v1 as components
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, RandomForestClassifier
 from sklearn.tree import DecisionTreeRegressor
-from xgboost import XGBRegressor
-from lightgbm import LGBMRegressor
-from catboost import CatBoostRegressor
 
 st.set_page_config(layout="wide")
 
