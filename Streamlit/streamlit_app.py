@@ -90,13 +90,13 @@ def fm22_prediction(df, name):
     else:
         index = df[df["Name"] == str(name)].index.tolist()[0]
         final_df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment.csv")
-        model = joblib.load(r'/app/fm22-players-wage-prediction/Streamlit/voting_clf_2.pkl')
+        model = joblib.load(r"/app/fm22-players-wage-prediction/Streamlit/voting_clf_2.pkl")
         y = final_df["Wages"]
         X = final_df.drop(["Wages","Name"], axis=1)
-        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25,random_state=17)
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=17)
         return model.predict(X.iloc[index].values.reshape(1, -1))
 
-wage = fm22_prediction(df, all_player_selected)
+wage = fm22_prediction(df, str(all_player_selected))
 
 try:
     rw = df[df["Name"] == all_player_selected]["Wages"].tolist()[0]
@@ -185,7 +185,7 @@ st.subheader("Mapping Players by Team")
 st.write("The Cities of the Players' Team visualized on the World Map")
 html = open(r"/app/fm22-players-wage-prediction/Streamlit/Image_Map.html",'r',encoding='utf-8')
 source = html.read()
-components.html(source,width=850,height=500)
+components.html(source,width=1420,height=500)
 
 st.text("")
 st.subheader("Map Visualizations")
@@ -211,28 +211,28 @@ if a:
         r"/app/fm22-players-wage-prediction/Streamlit/Nation_Heatmap.html", 'r',
         encoding='utf-8')
     source = html.read()
-    components.html(source, width=850, height=500)
+    components.html(source, width=1420, height=500)
 
 if button_2:
     html = open(
         r"/app/fm22-players-wage-prediction/Streamlit/Maaş_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
         encoding='utf-8')
     source = html.read()
-    components.html(source, width=850, height=500)
+    components.html(source, width=1420, height=500)
     a= False
 if button_3:
     html = open(
         r"/app/fm22-players-wage-prediction/Streamlit/Potensiyel_ortalamasına_göre_club_ülke_dağılımı.html", 'r',
         encoding='utf-8')
     source = html.read()
-    components.html(source, width=850, height=500)
+    components.html(source, width=1420, height=500)
     a = False
 if button_4:
     html = open(
         r"/app/fm22-players-wage-prediction/Streamlit/Potensiyel_ortalamasına_göre_ülke_dağılımı.html", 'r',
         encoding='utf-8')
     source = html.read()
-    components.html(source, width=850, height=500)
+    components.html(source, width=1420, height=500)
     a = False
 #4C78A9
 #####
