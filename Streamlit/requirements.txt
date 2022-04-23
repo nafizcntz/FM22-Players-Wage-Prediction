@@ -5,7 +5,7 @@ scikit-learn==1.0.2
 joblib==1.1.0
 lightgbm==3.3.2
 catboost==1.0.5
-xgboost==1.6.0
+xgboost==
 gbm==0.0.1
 random-forest-mc==0.3.7
 
