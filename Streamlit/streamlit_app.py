@@ -5,10 +5,19 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error,mean_absolute_error,accuracy_score
 import joblib
 import streamlit.components.v1 as components
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor, RandomForestClassifier
+from sklearn.tree import DecisionTreeRegressor
+from xgboost import XGBRegressor
+from lightgbm import LGBMRegressor
+from catboost import CatBoostRegressor
 
 st.set_page_config(layout="wide")
 
-
+# lightgbm==3.3.2
+# catboost==1.0.5
+# xgboost==1.2.0
+# gbm==0.0.1
+# random-forest-mc==0.3.7
 df = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment.csv")
 df_2 = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_deployment_2.csv")
 df_X_test = pd.read_csv(r"/app/fm22-players-wage-prediction/Streamlit/Model_X_test_2.csv")
