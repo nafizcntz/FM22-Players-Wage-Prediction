@@ -754,14 +754,12 @@ df_new["Caps_fm21"] = df_new["Caps_fm21"].astype(int)
 df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
 
 
-
+df_new.to_csv("Model_deployment_2.csv",index=False)
 
 
 ################
 # Encoding
 ################
-
-cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
 
 # Nation ile CNation kolonlarında ortak değerler olduğundan ötürü aynı değerlerin
 # atamsı labelencoder ile yapıldı.
@@ -815,6 +813,8 @@ df_new.info(verbose=True)
 ############
 # Scaling
 #############
+cat_cols, num_cols, cat_but_car = grab_col_names(df_new)
+
 from sklearn.preprocessing import RobustScaler
 rs = RobustScaler()
 num_cols = [i for i in num_cols if i not in "Wages"]
@@ -827,6 +827,7 @@ df_new.head()
 #log1p ---> Sale_Price
 
 df_new['Wages'] = np.log1p(df_new["Wages"].values)
+
 
 
 ################################
@@ -864,7 +865,7 @@ np.cumsum(pca.explained_variance_ratio_)
 final_df = pd.DataFrame(pca_fit, columns=["PC1","PC2","PC3","PC4","PC5","PC6","PC7","PC8","PC9","PC10","PC11"])
 final_df["Wages"] = df_new["Wages"].reset_index(drop=True)
 
-final_df =df_new
+final_df = df_new
 #########################################
 # Model Kurma
 #########################################
@@ -1030,7 +1031,7 @@ from sklearn.ensemble import VotingRegressor
 
 def voting_regression(models, X_train, y_train):
     print("Voting Regression...")
-    voting_clf = VotingRegressor(estimators=[(models[0][0], models[0][1]), (models[1][0], models[1][1]),]).fit(X_train, y_train)
+    voting_clf = VotingRegressor(estimators=[(models[0][0], models[0][1]), (models[1][0], models[1][1])]).fit(X_train, y_train)
 
     cv_results = cross_validate(voting_clf, X_train, y_train, cv=5,
                                 scoring=["neg_root_mean_squared_error", "neg_mean_absolute_error", "r2"])
@@ -1041,7 +1042,7 @@ def voting_regression(models, X_train, y_train):
 
 voting_clf = voting_regression(models,X_train,y_train)
 import joblib
-joblib.dump(voting_clf, "Streamlit/voting_clf_3.pkl")
+joblib.dump(voting_clf,"voting_clf_2.pkl")
 
 
 # VR RMSE   :  3714.203160096844
