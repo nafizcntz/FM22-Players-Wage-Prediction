@@ -185,7 +185,7 @@ def plot_importance(model, features,save=False):
 
 
 df_new = pd.read_csv("data/fm22_players_15k.csv")
-
+df_new.head()
 
 
 
