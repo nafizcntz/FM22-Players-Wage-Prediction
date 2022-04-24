@@ -757,6 +757,40 @@ df_new["Goals_fm21"] = df_new["Goals_fm21"].astype(int)
 df_new.to_csv("Model_deployment_2.csv",index=False)
 
 
+#
+# ##### KMEANS #####
+# df_kmeans = pd.read_csv(r"C:\Users\Nafiz\Python\Turkcell GY DS Bootcamp\Final Projesi\Turkcell GY DS Bootcamp Projesi\Model_deployment_2.csv")
+#
+# cat_cols, num_cols, cat_but_car = grab_col_names(df_kmeans)
+#
+# df_kmeans[df_kmeans["Kategori"] <= 3]
+#
+# df_kmeans[num_cols[7:43]]
+# pca_col = num_cols[7:43]
+# pca = PCA(n_components=3)
+# pca_fit = pca.fit_transform(df_kmeans[pca_col][(8 <= df_kmeans["Kategori"]) & (df_kmeans["Kategori"] <= 11)])
+# pca.explained_variance_ratio_
+# np.cumsum(pca.explained_variance_ratio_)
+#
+# final_kmeans_df = pd.DataFrame(pca_fit, columns=["PC1","PC2","PC3"])
+# final_kmeans_df["Kategori"] = df_kmeans[(8 <= df_kmeans["Kategori"]) & (df_kmeans["Kategori"] <= 11)]["Kategori"].values
+#
+# import matplotlib.pyplot as plt
+# from mpl_toolkits.mplot3d import Axes3D
+#
+# colors = ['#DF2020', '#81DF20', '#2095DF', '#3C3F41']
+# final_kmeans_df['c'] = final_kmeans_df.Kategori.map({8:colors[0], 9:colors[1], 10:colors[2], 11:colors[3]})
+#
+# fig = plt.figure(figsize=(10,10))
+# ax = fig.add_subplot(111, projection='3d')
+# ax.scatter3D(final_kmeans_df["PC1"],final_kmeans_df["PC2"],final_kmeans_df["PC3"],c=final_kmeans_df['c'])
+# ax.set_xlabel("PCA1")
+# ax.set_ylabel("PCA2")
+# ax.set_zlabel("PCA3")
+# plt.show()
+
+
+################################33
 ################
 # Encoding
 ################
